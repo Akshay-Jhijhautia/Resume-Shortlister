@@ -21,7 +21,7 @@ def schema_text() -> str:
 
 
 def main() -> None:
-    SCHEMA_PATH.write_text(schema_text())
+    SCHEMA_PATH.write_text(schema_text(), encoding="utf-8")
     print(f"Wrote {SCHEMA_PATH}")
 
 

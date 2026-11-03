@@ -14,6 +14,7 @@ originals are never touched.
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import shlex
 import shutil
@@ -49,12 +50,29 @@ def resolve_folder(folder: str | Path) -> Path:
 UPLOADS_LABEL = "your uploaded resumes"
 
 
-def split_paths(text: str) -> list[str]:
-    """Paths typed or dragged into a terminal: quoted, or with backslash-escaped spaces."""
+def split_paths(text: str, windows: bool | None = None) -> list[str]:
+    """Paths typed, pasted or dragged into a terminal: quoted, or (macOS and Linux) with
+    backslash-escaped spaces. On Windows a backslash separates folders, so only quotes group
+    ("Copy as path" in File Explorer gives ``"C:\\Users\\me\\My Resumes"``)."""
+    lexer = shlex.shlex(text, posix=True)
+    lexer.whitespace_split, lexer.commenters = True, ""  # as shlex.split: "#" is not a comment
+    if _windows(windows):
+        lexer.escape = ""
     try:
-        return shlex.split(text)
+        return list(lexer)
     except ValueError:  # an unbalanced quote: fall back to whitespace
         return text.split()
+
+
+def join_paths(paths: list[str | Path], windows: bool | None = None) -> str:
+    """``paths`` as one line that ``split_paths`` reads back unchanged."""
+    if _windows(windows):  # a Windows path cannot contain a double quote
+        return " ".join(f'"{p}"' for p in map(str, paths))
+    return " ".join(shlex.quote(str(p)) for p in paths)
+
+
+def _windows(windows: bool | None) -> bool:
+    return os.name == "nt" if windows is None else windows
 
 
 def classify(paths: list[str]) -> tuple[Path | None, list[Path]]:

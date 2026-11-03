@@ -5,8 +5,15 @@ const ACCEPTED = ".pdf,.docx,.txt,.md";
 /** A long folder path as its last two folders ("…/hiring/applicants"); short ones as they are. */
 export function shortPath(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean);
-  return path.length <= 40 || parts.length <= 2 ? path : `…/${parts.slice(-2).join("/")}`;
+  const separator = path.includes("\\") && !path.includes("/") ? "\\" : "/"; // a Windows path keeps its own
+  return path.length <= 40 || parts.length <= 2 ? path : `…${separator}${parts.slice(-2).join(separator)}`;
 }
+
+/** A folder path as this computer writes them (the app and the browser run on the same one). */
+export const FOLDER_EXAMPLE =
+  typeof navigator !== "undefined" && /Windows/.test(navigator.userAgent)
+    ? "C:\\Users\\you\\Downloads\\applicants"
+    : "~/Downloads/applicants";
 
 interface Props {
   resumes: string | null;
@@ -75,7 +82,7 @@ export function ResumesPanel({ resumes, busy, onFiles, onFolder }: Props) {
         <div className="row">
           <input
             id="folder"
-            placeholder="~/Downloads/applicants"
+            placeholder={FOLDER_EXAMPLE}
             value={folder}
             onChange={(event) => setFolder(event.target.value)}
           />

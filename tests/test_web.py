@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from resume_shortlister import app as cli_app
 from resume_shortlister.pools import ResumePool
+from resume_shortlister.rag.resume_rag import display_path
 from resume_shortlister.schemas import IntentDecision, InterviewQuestion, InterviewQuestions, Requirements
 from resume_shortlister.services import Services
 from resume_shortlister.config import Settings
@@ -233,8 +234,17 @@ def test_a_folder_is_loaded_and_reloaded_after_a_restart(client, make_services, 
     restarted = TestClient(create_app(make_services, token=TOKEN), base_url="http://127.0.0.1",
                            headers={TOKEN_HEADER: TOKEN})
     snapshot = restarted.get(f"/api/sessions/{session_id}").json()
-    assert snapshot["notice"].startswith(f"Resumes in {folder}") and "1 ready" in snapshot["notice"]
+    assert snapshot["notice"].startswith(f"Resumes in {display_path(str(folder))}") and "1 ready" in snapshot["notice"]
     assert restarted.get(f"/api/sessions/{session_id}").json()["notice"] is None  # said once
+
+
+def test_a_folder_path_in_quotes_is_loaded(client, tmp_path):
+    folder = tmp_path / "My Applicants"  # File Explorer's "Copy as path" quotes every path
+    folder.mkdir()
+    shutil.copy(RESUMES_DIR / "resume_john_doe.pdf", folder)
+    streamed = events(client.post(f"/api/sessions/{_new(client)}/folder", json={"path": f'"{folder}"'}))
+    assert "1 ready" in streamed[0][1]["text"]
+    assert streamed[-1][1]["messages"][0]["text"] == f"Load the resumes in {folder}"
 
 
 # --- one turn at a time, failures, deleting ---------------------------------------------------------------

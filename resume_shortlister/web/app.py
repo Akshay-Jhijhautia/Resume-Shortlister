@@ -17,7 +17,6 @@ import dataclasses
 import json
 import os
 import secrets
-import shlex
 import shutil
 import threading
 import uuid
@@ -131,7 +130,7 @@ def create_app(
         if not page.is_file():
             return HTMLResponse(_MISSING_UI_PAGE.format(version=__version__), status_code=503)
         # Never cached: the token changes with every start.
-        return HTMLResponse(page.read_text().replace(TOKEN_PLACEHOLDER, app.state.token),
+        return HTMLResponse(page.read_text(encoding="utf-8").replace(TOKEN_PLACEHOLDER, app.state.token),
                             headers={"Cache-Control": "no-store"})
 
     # --- status and sessions ---
@@ -198,10 +197,11 @@ def create_app(
 
     @app.post("/api/sessions/{session_id}/folder")
     def load_folder(session_id: str, request: FolderRequest) -> StreamingResponse:
-        path = Path(request.path).expanduser()
+        # File Explorer's "Copy as path" puts the path in quotes.
+        path = Path(request.path.strip().strip("\"'")).expanduser()
         if not path.is_dir():
             raise HTTPException(422, f"Not a folder: {request.path}")
-        return stream(opened(session_id), f"/resumes {shlex.quote(str(path))}")
+        return stream(opened(session_id), f"/resumes {pools.join_paths([path])}")
 
     @app.post("/api/sessions/{session_id}/files")
     def upload_files(session_id: str, files: list[UploadFile] = File(...)) -> StreamingResponse:
@@ -231,7 +231,7 @@ def create_app(
             cleanup()
             raise HTTPException(422, "No files received.")
         # The chat's own upload path: files join this session's uploads batch.
-        return stream(session, "/add " + " ".join(shlex.quote(p) for p in paths), cleanup)
+        return stream(session, f"/add {pools.join_paths(paths)}", cleanup)
 
     # --- results ---
 

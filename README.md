@@ -47,7 +47,7 @@ and [Limitations](#limitations) before relying on it.
 
 ## Get started
 
-Runs on **macOS and Linux**. Windows support is planned for the next version.
+Runs on **Windows 10 and 11, macOS and Linux**.
 
 You need an API key for a chat model: OpenAI by default, or Anthropic, Google
 Gemini, a local Ollama model or any OpenAI-compatible server
@@ -56,8 +56,15 @@ Python, no git.
 
 ### 1. Install
 
-Open a terminal (on macOS: Applications › Utilities › Terminal), paste this line
-and press Enter:
+**Windows:** open PowerShell (Start menu, type "PowerShell"), paste this line and
+press Enter:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.ps1 | iex"
+```
+
+**macOS or Linux:** open a terminal (on macOS: Applications › Utilities › Terminal),
+paste this line and press Enter:
 
 ```bash
 curl -LsSf https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.sh | sh
@@ -68,18 +75,19 @@ On Linux without curl (`command not found: curl`), use
 
 It takes a minute or two, then asks once for your OpenAI API key (what you type
 is hidden; press Enter to skip if you use another provider). The key stays in
-`~/.resume-shortlister/.env` on your computer; the app never shows it. Run the
+`~/.resume-shortlister/.env` on your computer (on Windows,
+`C:\Users\<you>\.resume-shortlister\.env`); the app never shows it. Run the
 same line again to update to the newest version; your key and data are kept.
 
-What it does ([the script](install.sh)): it installs [uv](https://docs.astral.sh/uv/),
-a small installer for Python apps, into `~/.local/bin`; uv downloads its own
-copy of Python and installs the `resume-shortlister` command, adding
-`~/.local/bin` to your shell's PATH. No sudo; your system's Python and other
-apps are left alone.
+What it does ([install.ps1](install.ps1), [install.sh](install.sh)): it installs
+[uv](https://docs.astral.sh/uv/), a small installer for Python apps, into
+`~/.local/bin`; uv downloads its own copy of Python and installs the
+`resume-shortlister` command, adding `~/.local/bin` to your PATH. No administrator
+rights or sudo; your system's Python and other apps are left alone.
 
 ### 2. Start it
 
-Open a new terminal window and run:
+Open a new terminal window (on Windows, a new PowerShell window) and run:
 
 ```bash
 resume-shortlister web
@@ -101,9 +109,10 @@ Next time, just run `resume-shortlister web`. Your screenings are saved under Se
 
 | If | Then |
 | --- | --- |
-| `command not found: resume-shortlister` | Open a new terminal window, or run the install line again |
-| An amber dot: "OPENAI_API_KEY is not set" | Add `OPENAI_API_KEY=sk-...` to `~/.resume-shortlister/.env` (`nano ~/.resume-shortlister/.env`), then restart the app |
+| `command not found: resume-shortlister` (Windows: "is not recognized") | Open a new terminal window, or run the install line again |
+| An amber dot: "OPENAI_API_KEY is not set" | Run the install line again and paste your key when asked (or add `OPENAI_API_KEY=sk-...` to `~/.resume-shortlister/.env`), then restart the app |
 | "Address already in use" | It is already running in another terminal, or use `resume-shortlister web --port 8766` |
+| Windows: "running scripts is disabled" | Paste the whole install line, which allows this one script; if your organisation blocks it, ask your IT team |
 
 To remove it: `resume-shortlister clean --all` (your data), then
 `uv tool uninstall resume-shortlister`.

@@ -32,12 +32,12 @@ def source_hash() -> str:
 
 
 def test_the_committed_build_matches_the_frontend_source():
-    recorded = json.loads((STATIC / "build-info.json").read_text())["source_hash"]
+    recorded = json.loads((STATIC / "build-info.json").read_text(encoding="utf-8"))["source_hash"]
     assert recorded == source_hash(), "frontend/ changed since the last build: run `npm run build` in frontend/"
 
 
 def test_the_api_types_match_the_api():
-    assert (FRONTEND / "openapi.json").read_text() == export_openapi.schema_text(), (
+    assert (FRONTEND / "openapi.json").read_text(encoding="utf-8") == export_openapi.schema_text(), (
         "the API changed: run `python -m scripts.export_openapi`, then `npm run api-types` and `npm run build` in frontend/"
     )
 

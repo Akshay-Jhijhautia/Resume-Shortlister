@@ -132,8 +132,8 @@ def test_save_reports_writes_a_new_folder_each_time(john, tmp_path):
     first = explainability.save_reports(str(tmp_path), ROLE, shortlist, "# Summary\n")
     second = explainability.save_reports(str(tmp_path), ROLE, shortlist, "# Summary\n")
     assert first != second and first.name.startswith("python-backend-engineer-")
-    assert (first / "summary.md").read_text() == "# Summary\n"
-    assert (first / "candidates" / "01-john_doe.md").read_text().startswith("# John Doe")
+    assert (first / "summary.md").read_text(encoding="utf-8") == "# Summary\n"
+    assert (first / "candidates" / "01-john_doe.md").read_text(encoding="utf-8").startswith("# John Doe")
 
 
 # --- improvement suggestions --------------------------------------------------------------------------
@@ -203,7 +203,7 @@ def test_pipeline_suggests_improvements_and_saves_reports(services):
     assert "**What would make this a clear interview:**" in state["report"]
 
     folder = Path(services.settings.reports_dir) / Path(state["report_dir"]).name
-    assert (folder / "summary.md").read_text() == state["report"]
+    assert (folder / "summary.md").read_text(encoding="utf-8") == state["report"]
     assert len(list((folder / "candidates").iterdir())) == len(state["shortlist"])
     assert f"Reports saved to `{state['report_dir']}`." in state["messages"][-1].text
 

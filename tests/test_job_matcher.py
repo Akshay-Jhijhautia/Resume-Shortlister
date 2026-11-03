@@ -6,7 +6,7 @@ from tests.paths import JD_DIR
 
 
 def _jd(name):
-    return (JD_DIR / f"{name}.txt").read_text()
+    return (JD_DIR / f"{name}.txt").read_text(encoding="utf-8")
 
 
 # --- parse_job_description ------------------------------------------------------------

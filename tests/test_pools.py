@@ -59,7 +59,7 @@ def test_pool_names_are_readable_and_unique_per_path(tmp_path):
 def test_resolve_folder_rejects_missing_and_files(tmp_path):
     with pytest.raises(FileNotFoundError, match="Resume folder not found"):
         resolve_folder(tmp_path / "missing")
-    (tmp_path / "file.txt").write_text("x")
+    (tmp_path / "file.txt").write_text("x", encoding="utf-8")
     with pytest.raises(NotADirectoryError):
         resolve_folder(tmp_path / "file.txt")
 
@@ -101,7 +101,7 @@ def test_intake_report_explains_every_skipped_file(offline, tmp_path):
     folder = _folder(tmp_path, "applicants", ["resume_alex_lee.txt"])
     (folder / "old.doc").write_bytes(b"binary")
     (folder / "sheet.xlsx").write_bytes(b"binary")
-    (folder / "empty.txt").write_text("   ")
+    (folder / "empty.txt").write_text("   ", encoding="utf-8")
     write_scanned_pdf(folder / "scan.pdf")
     (folder / "photo.png").write_bytes(b"\x89PNG")
 
@@ -215,10 +215,35 @@ def test_a_new_index_version_reindexes_unchanged_files(offline, tmp_path, monkey
         (r"/Users/me/My\ Resumes/Jane\ Doe.pdf", ["/Users/me/My Resumes/Jane Doe.pdf"]),  # dragged into Terminal
         ("'/x/Jane Doe.pdf' \"/x/Raj K.docx\"", ["/x/Jane Doe.pdf", "/x/Raj K.docx"]),
         ("/x/it's.pdf", ["/x/it's.pdf"]),  # unbalanced quote: split on whitespace
+        ("/jobs/C#-developers", ["/jobs/C#-developers"]),  # "#" starts no comment
     ],
 )
 def test_split_paths(text, expected):
-    assert pools.split_paths(text) == expected
+    assert pools.split_paths(text, windows=False) == expected
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        (r"C:\Users\hr\Resumes", [r"C:\Users\hr\Resumes"]),  # backslashes separate folders
+        (r'"C:\Users\hr\My Resumes"', [r"C:\Users\hr\My Resumes"]),  # File Explorer's "Copy as path"
+        (r"'C:\Users\hr\My Resumes\Jane Doe.pdf'", [r"C:\Users\hr\My Resumes\Jane Doe.pdf"]),  # PowerShell
+        (r'"C:\x\a.pdf" "C:\x\b c.docx"', [r"C:\x\a.pdf", r"C:\x\b c.docx"]),
+        (r"\\server\hr\C#-developers", [r"\\server\hr\C#-developers"]),  # a network share
+        (r"C:\Users\O'Brien\Resumes", [r"C:\Users\O'Brien\Resumes"]),  # unbalanced quote
+    ],
+)
+def test_split_windows_paths(text, expected):
+    assert pools.split_paths(text, windows=True) == expected
+
+
+@pytest.mark.parametrize("windows", [False, True])
+def test_joined_paths_split_back_unchanged(windows):
+    if windows:
+        paths = [r"C:\Users\hr\My Resumes", r"C:\Users\O'Brien\Jane Doe.pdf", r"\\server\hr\C#\a.pdf"]
+    else:
+        paths = ["/Users/hr/My Resumes", "/x/O'Brien/Jane Doe.pdf", r"/x/back\slash.pdf", "/x/C#/$HOME.pdf"]
+    assert pools.split_paths(pools.join_paths(paths, windows=windows), windows=windows) == paths
 
 
 def test_classify_folder_files_and_mistakes(tmp_path):
@@ -236,13 +261,13 @@ def test_upload_copies_once_and_renames_clashes(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     a.mkdir()
     b.mkdir()
-    (a / "cv.txt").write_text("Jane Doe")
-    (b / "cv.txt").write_text("Raj Kumar")
+    (a / "cv.txt").write_text("Jane Doe", encoding="utf-8")
+    (b / "cv.txt").write_text("Raj Kumar", encoding="utf-8")
     batch = tmp_path / "batch"
     assert pools.upload([a / "cv.txt"], batch) == ["cv.txt"]
     assert pools.upload([a / "cv.txt", b / "cv.txt"], batch) == ["cv.txt", "cv-2.txt"]
     assert sorted(p.name for p in batch.iterdir()) == ["cv-2.txt", "cv.txt"]
-    assert (batch / "cv-2.txt").read_text() == "Raj Kumar"
+    assert (batch / "cv-2.txt").read_text(encoding="utf-8") == "Raj Kumar"
 
 
 def test_batch_for_is_stable_per_file_set(tmp_path):
@@ -272,9 +297,11 @@ def test_round_one_checks_skills_the_vocabulary_does_not_know(offline, tmp_path)
     folder = tmp_path / "hris"
     folder.mkdir()
     (folder / "resume_ana_ruiz.txt").write_text(
-        "Ana Ruiz\n\nEXPERIENCE\nHRIS Analyst, Contoso (Jan 2019 - Dec 2022)\n- Administered Workday HCM.\n")
+        "Ana Ruiz\n\nEXPERIENCE\nHRIS Analyst, Contoso (Jan 2019 - Dec 2022)\n- Administered Workday HCM.\n",
+        encoding="utf-8")
     (folder / "resume_ben_hale.txt").write_text(
-        "Ben Hale\n\nEXPERIENCE\nHR Generalist, Fabrikam (Jan 2018 - Dec 2022)\n- Ran onboarding in BambooHR.\n")
+        "Ben Hale\n\nEXPERIENCE\nHR Generalist, Fabrikam (Jan 2018 - Dec 2022)\n- Ran onboarding in BambooHR.\n",
+        encoding="utf-8")
     offline.use_folder(folder)
     role = Requirements.model_validate({
         "role_title": "HRIS Analyst", "must_have": [{"skill": "Workday", "min_years": 2}], "nice_to_have": [],

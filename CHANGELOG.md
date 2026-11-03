@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- **Windows 10 and 11**: a one-line install in PowerShell (`install.ps1`), the
+  same steps as on macOS and Linux, with no administrator rights. Folder paths
+  pasted from File Explorer ("Copy as path", `"C:\Users\me\My Resumes"`) and
+  network shares are read as typed. Plain-text resumes saved by Windows Notepad
+  in any of its encodings (UTF-8 with a byte order mark, "Unicode", "ANSI") are
+  read correctly, as are Windows line endings.
+- **Tests on Windows, macOS and Linux** on every push (GitHub Actions), with each
+  system's installer installing the package just built and starting the web app.
+
 ### Fixed
 
 - The installer hid what you type only after showing the key prompt, so a key

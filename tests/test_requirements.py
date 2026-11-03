@@ -167,14 +167,14 @@ DIFFERENT_READINGS = {
 
 @pytest.mark.parametrize("jd", sorted(DIFFERENT_READINGS))
 def test_rules_make_different_readings_agree(jd):
-    text = (JD_DIR / jd).read_text()
+    text = (JD_DIR / jd).read_text(encoding="utf-8")
     results = {_decided(extract_requirements(text, model=_fake(_requirements(**reading))))
                for reading in DIFFERENT_READINGS[jd]}
     assert len(results) == 1, results
 
 
 def test_rules_on_the_frontend_jd():
-    jd = (JD_DIR / "frontend_react.txt").read_text()
+    jd = (JD_DIR / "frontend_react.txt").read_text(encoding="utf-8")
     llm_answer = _requirements(must_have=_must("React", "TypeScript", "CSS", years={"TypeScript": 2}),
                                nice_to_have=["Tailwind CSS", "web accessibility (WCAG)", "Design systems"])
     req = extract_requirements(jd, model=_fake(llm_answer))
@@ -218,7 +218,7 @@ def test_optional_or_alternative_skills_are_never_must_haves(line):
 
 
 def test_only_the_requirements_section_makes_must_haves():
-    jd = (JD_DIR / "senior_python_ml.txt").read_text()  # "About the role" mentions NLP and LLMs
+    jd = (JD_DIR / "senior_python_ml.txt").read_text(encoding="utf-8")  # "About the role" mentions NLP and LLMs
     req = extract_requirements(jd, model=_fake(_requirements(must_have=_must("LLMs", "Python"))))
     assert "LLMs" not in req.must_have_skills and "LLMs" in req.nice_to_have
     # Requirements naming one skill demand it even when the model left it out.
@@ -226,7 +226,7 @@ def test_only_the_requirements_section_makes_must_haves():
 
 
 def test_in_prose_a_lone_mention_is_left_to_the_model():
-    jd = (JD_DIR / "devops_sre.txt").read_text()
+    jd = (JD_DIR / "devops_sre.txt").read_text(encoding="utf-8")
     req = extract_requirements(jd, model=_fake(_requirements(must_have=_must("Terraform"))))
     assert req.must_have_skills == ["Terraform"] and req.min_total_years == 5
     assert {"Kubernetes", "Python", "Go", "Helm"} <= set(req.nice_to_have)
@@ -244,7 +244,7 @@ def test_in_prose_a_lone_mention_is_left_to_the_model():
     ("frontend_react.txt", ["React", "TypeScript", "CSS"], []),
 ])
 def test_open_questions_are_the_models_own_must_have_choices(jd, model_must, questions):
-    text = (JD_DIR / jd).read_text()
+    text = (JD_DIR / jd).read_text(encoding="utf-8")
     req = extract_requirements(text, model=_fake(_requirements(must_have=_must(*model_must))))
     assert [(q.requirement, q.must, q.nice) for q in open_questions(text, req)] == questions
 
@@ -291,7 +291,7 @@ def test_degree_required(jd, required):
 
 def test_policy_corrects_llm_knockouts_on_java_jd():
     """The live gpt-4o-mini answer for java_backend.txt, before the rules ran."""
-    jd = (JD_DIR / "java_backend.txt").read_text()
+    jd = (JD_DIR / "java_backend.txt").read_text(encoding="utf-8")
     llm_answer = _requirements(
         role_title="Backend Java Engineer (Payments)",
         must_have=[{"skill": s, "min_years": None}
@@ -310,7 +310,7 @@ def test_policy_corrects_llm_knockouts_on_java_jd():
 
 def test_policy_demotes_concepts_the_parser_cannot_check():
     """gpt-6-luna names broad concepts as must-haves; no resume lists them as skills."""
-    jd = (JD_DIR / "java_backend.txt").read_text()
+    jd = (JD_DIR / "java_backend.txt").read_text(encoding="utf-8")
     llm_answer = _requirements(
         must_have=[{"skill": s, "min_years": None}
                    for s in ["Java", "Spring Boot", "Kafka", "Relational Databases"]],
@@ -339,7 +339,7 @@ def test_match_parsed_applies_requirements_as_knockouts(matcher):
 
 
 def test_match_delegates_to_match_parsed(matcher):
-    jd = (JD_DIR / "java_backend.txt").read_text()
+    jd = (JD_DIR / "java_backend.txt").read_text(encoding="utf-8")
     parsed = job_matcher.parse_job_description(jd)
     assert matcher.match(jd, k=3, details=True) == matcher.match_parsed(parsed, k=3, details=True)
 

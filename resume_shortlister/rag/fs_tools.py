@@ -9,6 +9,7 @@ directory; callers such as the LLM dispatcher should catch those exceptions.
 
 from __future__ import annotations
 
+import codecs
 import re
 import unicodedata
 from datetime import datetime
@@ -69,10 +70,22 @@ def _extract_docx(path: Path) -> str:
 
 
 def _extract_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="latin-1")
+    text = _decode_text(path.read_bytes())
+    return text.replace("\r\n", "\n").replace("\r", "\n")  # Windows and old Mac line endings
+
+
+def _decode_text(data: bytes) -> str:
+    """Text in the encodings editors save: UTF-16 (Windows Notepad's "Unicode"), UTF-8 (with
+    or without the byte order mark Notepad writes), Windows-1252 ("ANSI", whose curly quotes
+    and dashes Latin-1 lacks), else Latin-1, which reads any bytes."""
+    if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return data.decode("utf-16")
+    for encoding in ("utf-8-sig", "cp1252"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+    return data.decode("latin-1")
 
 
 def read_file(filepath: str) -> dict:

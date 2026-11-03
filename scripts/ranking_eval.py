@@ -109,7 +109,7 @@ class CachedEmbedder:
 
     def __init__(self, inner: resume_rag.Embedder, path: Path):
         self.inner, self.path, self.name = inner, path, inner.name
-        self.cache = json.loads(path.read_text()) if path.exists() else {}
+        self.cache = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
     def _key(self, text: str) -> str:
         return hashlib.sha256(f"{self.name}\n{text}".encode()).hexdigest()
@@ -119,14 +119,14 @@ class CachedEmbedder:
         if missing:
             for text, vector in zip(missing, self.inner.embed(missing), strict=True):
                 self.cache[self._key(text)] = vector
-            self.path.write_text(json.dumps(self.cache))
+            self.path.write_text(json.dumps(self.cache), encoding="utf-8")
         return [self.cache[self._key(t)] for t in texts]
 
     def embed_query(self, text: str) -> list[float]:
         key = self._key(f"query\n{text}")
         if key not in self.cache:
             self.cache[key] = self.inner.embed_query(text)
-            self.path.write_text(json.dumps(self.cache))
+            self.path.write_text(json.dumps(self.cache), encoding="utf-8")
         return self.cache[key]
 
 
@@ -276,14 +276,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "compare":
-        compare(json.loads(args.first.read_text()), json.loads(args.second.read_text()))
+        compare(json.loads(args.first.read_text(encoding="utf-8")), json.loads(args.second.read_text(encoding="utf-8")))
         return 0
     embedder = resume_rag.embedder_from_name(args.embedder, cache_dir=args.models_dir)
     if args.cache:
         embedder = CachedEmbedder(embedder, args.cache)
     with tempfile.TemporaryDirectory() as workdir:
         results = run(embedder, Path(workdir))
-    args.out.write_text(json.dumps(results, indent=1))
+    args.out.write_text(json.dumps(results, indent=1), encoding="utf-8")
     print_run(results)
     return 0
 
