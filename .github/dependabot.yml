@@ -1,0 +1,7 @@
+# Propose updates to the actions the workflows use, once a month (they are pinned to commits).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

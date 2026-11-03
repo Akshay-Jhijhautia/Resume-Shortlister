@@ -1,6 +1,20 @@
-# Changelog 3rd Novemver, 2026
+# Changelog
 
-## 1.2.0 (unreleased)
+## Unreleased
+
+### Fixed
+
+- The installer hid what you type only after showing the key prompt, so a key
+  typed or pasted at once could appear on screen. Typing is now hidden first,
+  and shown again if you press Ctrl-C at the prompt.
+
+### Changed
+
+- The release workflow uses the current versions of its GitHub actions (Node 24,
+  ending GitHub's deprecation warnings), pinned to commits; Dependabot proposes
+  updates monthly.
+
+## 1.2.0 (2026-11-03)
 
 ### Added
 

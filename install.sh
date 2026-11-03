@@ -64,10 +64,14 @@ if [ -f "$env_file" ] && grep -Eq '^[[:space:]]*(OPENAI|ANTHROPIC|GOOGLE|LLM)_AP
     say "Your API key is already set in $env_file."
 elif (: </dev/tty) 2>/dev/null; then
     # Read from the terminal: when piped from curl, this script's own input is the script.
-    printf 'Paste your OpenAI API key (hidden), or press Enter to skip: ' >/dev/tty
+    # Typing is hidden before the prompt appears, and shown again however this ends (Ctrl-C too).
+    trap 'stty echo </dev/tty 2>/dev/null || true' EXIT
+    trap 'exit 130' INT TERM
     stty -echo </dev/tty 2>/dev/null || true
+    printf 'Paste your OpenAI API key (hidden), or press Enter to skip: ' >/dev/tty
     IFS= read -r key </dev/tty || key=""
     stty echo </dev/tty 2>/dev/null || true
+    trap - EXIT INT TERM
     printf '\n' >/dev/tty
     if [ -n "$key" ]; then
         mkdir -p "$home"
