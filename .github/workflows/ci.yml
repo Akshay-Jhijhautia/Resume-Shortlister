@@ -1,0 +1,71 @@
+# On every push and pull request: the tests on Windows, macOS and Linux, and the one-line
+# installers on each, installing the package just built and starting the web app.
+# Actions are pinned to a commit (a tag can be moved); Dependabot proposes updates.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python: ["3.12"]
+        include:
+          - { os: ubuntu-latest, python: "3.11" }
+          - { os: ubuntu-latest, python: "3.13" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+      - name: Lint
+        run: uv run --python ${{ matrix.python }} --extra dev pyflakes resume_shortlister tests scripts
+      - name: Test
+        run: >-
+          uv run --python ${{ matrix.python }} --extra dev --extra anthropic --extra google --extra ollama
+          pytest -q --junitxml=test-results.xml
+      - name: Show each failure on the run's summary page
+        if: failure()
+        run: uv run --python ${{ matrix.python }} --no-project python -m scripts.ci_failures test-results.xml
+
+  install:
+    name: Installer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Build the package
+        shell: bash
+        run: |
+          python -m pip wheel --no-deps -w dist .
+          wheel="$(python -c "import glob, pathlib; print(pathlib.Path(glob.glob('dist/*.whl')[0]).resolve().as_uri())")"
+          echo "RESUME_SHORTLISTER_PACKAGE=resume-shortlister[anthropic,google,ollama] @ $wheel" >> "$GITHUB_ENV"
+      - name: Install with install.ps1, as from the Command Prompt
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy ByPass -Command "Get-Content -Raw install.ps1 | iex" < NUL
+      - name: Install with install.sh
+        if: runner.os != 'Windows'
+        run: sh install.sh < /dev/null
+      - name: Start the web app and open its page
+        shell: bash
+        run: |
+          "$HOME/.local/bin/resume-shortlister" --version
+          "$HOME/.local/bin/resume-shortlister" web --no-browser --port 8765 > web.log 2>&1 &
+          for _ in $(seq 60); do curl -fsS http://127.0.0.1:8765/ -o page.html 2>/dev/null && break; sleep 2; done
+          grep -q 'name="resume-shortlister-token"' page.html || { cat web.log; exit 1; }
+          echo "The web app answered."

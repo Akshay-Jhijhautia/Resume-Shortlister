@@ -99,7 +99,7 @@ def test_list_files_error_is_reported(tools):
 def test_write_file_stays_in_reports_dir(tools, services):
     reports = Path(services.settings.reports_dir).resolve()
     assert tools["write_file"].invoke({"filepath": "a/report.md", "content": "# Hi"})["success"]
-    assert (reports / "a" / "report.md").read_text() == "# Hi"
+    assert (reports / "a" / "report.md").read_text(encoding="utf-8") == "# Hi"
     inside = str(reports / "b.md")
     assert tools["write_file"].invoke({"filepath": inside, "content": "ok"})["success"]
     for outside in ("../escape.md", "/tmp/escape.md"):
@@ -128,7 +128,7 @@ def test_extract_requirements_reads_a_jd_file(tools, services):
     # The model's reading, completed by the rules: "Experience with Kafka ..." names Kafka alone.
     assert [r["skill"] for r in result["must_have"]] == ["Java", "Kafka"] and result["min_total_years"] == 6
     _, messages = services.model.calls[0]
-    assert messages[1].content == path.read_text().strip()
+    assert messages[1].content == path.read_text(encoding="utf-8").strip()
 
 
 def test_load_job_description():

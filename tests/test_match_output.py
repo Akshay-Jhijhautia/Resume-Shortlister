@@ -11,7 +11,7 @@ MATCH_KEYS = {
 
 
 def _jd(name):
-    return (JD_DIR / f"{name}.txt").read_text()
+    return (JD_DIR / f"{name}.txt").read_text(encoding="utf-8")
 
 
 def _names(result):

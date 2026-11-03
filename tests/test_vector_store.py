@@ -129,7 +129,7 @@ def test_reindex_skips_unchanged_and_force_does_not_duplicate(rag, resume_dir):
 def test_changed_resume_is_replaced(rag, resume_dir):
     rag.index_directory(str(resume_dir))
     path = resume_dir / "resume_alex_lee.txt"
-    path.write_text(path.read_text().replace("Kafka", "RabbitMQ"))
+    path.write_text(path.read_text(encoding="utf-8").replace("Kafka", "RabbitMQ"), encoding="utf-8")
 
     summary = rag.index_directory(str(resume_dir))
     assert summary["indexed"] == [str(path)]

@@ -94,9 +94,9 @@ def test_pipeline_reports_and_summarises(run):
 def test_pipeline_reads_a_jd_file(run, services):
     path = JD_DIR / "java_backend.txt"
     state = run(PYTHON_ROLE, jd=str(path))
-    assert state["job_description"] == path.read_text().strip()
+    assert state["job_description"] == path.read_text(encoding="utf-8").strip()
     _, messages = services.model.calls[0]
-    assert messages[1].content == path.read_text().strip()
+    assert messages[1].content == path.read_text(encoding="utf-8").strip()
 
 
 def test_no_candidate_passes(run):
@@ -173,7 +173,7 @@ def test_cli_prints_the_report_and_saves_it(services, monkeypatch, capsys):
     assert captured.out.startswith("# Shortlist: Python Backend Engineer")
     (folder,) = Path(services.settings.reports_dir).iterdir()
     assert f"Reports saved to {resume_rag.display_path(str(folder))}" in captured.err
-    assert (folder / "summary.md").read_text() == captured.out.removesuffix("\n")
+    assert (folder / "summary.md").read_text(encoding="utf-8") == captured.out.removesuffix("\n")
     assert len(list((folder / "candidates").iterdir())) == 2
 
 

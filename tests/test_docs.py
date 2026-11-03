@@ -3,7 +3,7 @@
 import re
 
 import matching_agent
-from scripts import pypi_readme
+from scripts import ci_failures, pypi_readme
 from tests.fakes import FakeChatModel
 from tests.paths import ROOT
 
@@ -16,7 +16,7 @@ DOCS = ["README.md", "CHANGELOG.md", "SECURITY.md", "frontend/README.md", *sorte
 
 
 def test_the_documented_diagram_matches_the_compiled_graph(services):
-    guide = (ROOT / "docs" / "how-it-works.md").read_text()
+    guide = (ROOT / "docs" / "how-it-works.md").read_text(encoding="utf-8")
     diagram = guide.split("```mermaid", 1)[1].split("```", 1)[0]
     documented = set(EDGE_RE.findall(diagram))
 
@@ -36,20 +36,20 @@ def test_every_link_between_the_docs_resolves():
     broken = []
     for doc in DOCS:
         source = ROOT / doc
-        for link in LINK_RE.findall(CODE_RE.sub("", source.read_text())):
+        for link in LINK_RE.findall(CODE_RE.sub("", source.read_text(encoding="utf-8"))):
             if re.match(r"[a-z]+:", link):  # https:, mailto:
                 continue
             path, _, anchor = link.partition("#")
             target = (source.parent / path).resolve() if path else source
             if not target.exists():
                 broken.append(f"{doc}: {link} (no such file)")
-            elif anchor and target.suffix == ".md" and anchor not in _anchors(target.read_text()):
+            elif anchor and target.suffix == ".md" and anchor not in _anchors(target.read_text(encoding="utf-8")):
                 broken.append(f"{doc}: {link} (no such heading)")
     assert broken == []
 
 
 def test_the_pypi_readme_links_every_file_on_github_at_the_release_tag():
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
     repo = pypi_readme.repository_url()
     published = pypi_readme.absolute_links(readme, "v9.9.9", repo)
 
@@ -60,3 +60,13 @@ def test_the_pypi_readme_links_every_file_on_github_at_the_release_tag():
     raw = repo.replace("https://github.com/", "https://raw.githubusercontent.com/")
     assert f"]({raw}/v9.9.9/docs/images/web-shortlist.png)" in published
     assert LINK_RE.sub("", published) == LINK_RE.sub("", readme)  # only the links changed
+
+
+def test_ci_failures_become_annotations(tmp_path):
+    report = tmp_path / "results.xml"
+    report.write_text(
+        '<testsuites><testsuite><testcase classname="tests.test_pools" name="test_split[a,b]">'
+        '<failure message="assert 1 == 2&#10;50% done: C:\\x">trace</failure></testcase>'
+        '<testcase classname="tests.test_ok" name="test_fine"/></testsuite></testsuites>', encoding="utf-8")
+    assert ci_failures.annotations(str(report)) == [
+        "::error title=tests.test_pools.test_split[a%2Cb]::assert 1 == 2%0A50%25 done: C:\\x"]

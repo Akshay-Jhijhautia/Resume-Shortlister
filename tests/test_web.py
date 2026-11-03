@@ -237,6 +237,15 @@ def test_a_folder_is_loaded_and_reloaded_after_a_restart(client, make_services, 
     assert restarted.get(f"/api/sessions/{session_id}").json()["notice"] is None  # said once
 
 
+def test_a_folder_path_in_quotes_is_loaded(client, tmp_path):
+    folder = tmp_path / "My Applicants"  # File Explorer's "Copy as path" quotes every path
+    folder.mkdir()
+    shutil.copy(RESUMES_DIR / "resume_john_doe.pdf", folder)
+    streamed = events(client.post(f"/api/sessions/{_new(client)}/folder", json={"path": f'"{folder}"'}))
+    assert "1 ready" in streamed[0][1]["text"]
+    assert streamed[-1][1]["messages"][0]["text"] == f"Load the resumes in {folder}"
+
+
 # --- one turn at a time, failures, deleting ---------------------------------------------------------------
 
 

@@ -342,13 +342,13 @@ def test_loading_a_folder_rescreens_the_current_role(chat, services, applicants)
 
 def test_folder_and_role_in_one_message(chat, services, applicants, tmp_path):
     jd = tmp_path / "backend.txt"
-    jd.write_text("Python backend engineer. Requirements: Python, Django.")
+    jd.write_text("Python backend engineer. Requirements: Python, Django.", encoding="utf-8")
     services.model.responses[IntentDecision] = intent("new_search", (str(applicants),), str(jd))
     services.model.responses[Requirements] = DJANGO_MUST  # both are listed as requirements
     chat.send(f"Screen the resumes in {applicants} against {jd}")
     values = state(chat)
     assert services.pool.folder == applicants
-    assert values["job_description"] == jd.read_text().strip()  # the JD file, not the sentence
+    assert values["job_description"] == jd.read_text(encoding="utf-8").strip()  # the JD file, not the sentence
     assert {m.name for m in values["candidates"]} == {"John Doe", "Alex Lee"}  # screened, nothing left open
 
 

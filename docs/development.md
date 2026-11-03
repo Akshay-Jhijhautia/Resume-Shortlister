@@ -79,7 +79,7 @@ sample session in these docs use the default 100.
 pytest -q
 ```
 
-The suite (over 550 tests) runs offline. A fake chat model answers structured
+The suite (over 650 tests) runs offline, with a made-up API key. A fake chat model answers structured
 calls and scripts tool-calling turns, and the index is a temporary one built
 with a hashing embedder. It covers:
 - the retrieval engine (file reading, chunking, metadata extraction, indexing, hybrid search);
@@ -95,6 +95,16 @@ with a hashing embedder. It covers:
 
 The browser interface has its own tests (Vitest and Testing Library):
 `npm run typecheck && npm test` in `frontend/`.
+
+On every push and pull request, GitHub Actions ([`ci.yml`](../.github/workflows/ci.yml))
+runs the suite on Windows, macOS and Linux (and Python 3.11 to 3.13 on Linux), then
+installs the package just built with the one-line installer of each system and starts
+the web app. A failed test appears on the run's summary page. Read and write text files
+with `encoding="utf-8"`: Windows would otherwise use its own code page.
+
+A release is a version tag (`git tag v1.3.0 && git push origin v1.3.0`): the
+[release workflow](../.github/workflows/release.yml) tests, builds and publishes to
+PyPI; running it by hand publishes to TestPyPI instead.
 
 Ranking quality is measured separately, on the 100 sample resumes, whose role
 families give relevance labels. Requirements are fixed (no LLM), so only the

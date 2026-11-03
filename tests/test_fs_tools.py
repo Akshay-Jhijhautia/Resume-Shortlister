@@ -60,6 +60,21 @@ def test_read_txt_latin1_fallback(tmp_path):
     assert result["content"] == "José García"
 
 
+@pytest.mark.parametrize(
+    "data",
+    [
+        "\ufeffJosé García\r\nC# – “senior”".encode("utf-8"),  # Notepad's UTF-8, with its byte order mark
+        "José García\r\nC# – “senior”".encode("utf-16"),  # Notepad's "Unicode"
+        "José García\r\nC# – “senior”".encode("cp1252"),  # Notepad's "ANSI"
+        "José García\rC# – “senior”".encode("utf-8"),  # old Mac line ending
+    ],
+)
+def test_read_txt_saved_by_windows_editors(tmp_path, data):
+    path = tmp_path / "resume.txt"
+    path.write_bytes(data)
+    assert fs_tools.read_file(str(path))["content"] == "José García\nC# – “senior”"
+
+
 def test_read_pdf(pdf_file):
     result = fs_tools.read_file(str(pdf_file))
     assert result["success"] is True
@@ -119,7 +134,7 @@ def test_read_corrupt_docx(tmp_path):
 
 def test_read_empty_file_warns(tmp_path):
     path = tmp_path / "empty.txt"
-    path.write_text("")
+    path.write_text("", encoding="utf-8")
     result = fs_tools.read_file(str(path))
     assert result["success"] is True
     assert "warning" in result
@@ -132,9 +147,9 @@ def test_read_empty_file_warns(tmp_path):
 def populated_dir(tmp_path):
     (tmp_path / "a.pdf").write_bytes(b"x")
     (tmp_path / "B.PDF").write_bytes(b"xy")
-    (tmp_path / "c.txt").write_text("hello")
+    (tmp_path / "c.txt").write_text("hello", encoding="utf-8")
     (tmp_path / "d.docx").write_bytes(b"z")
-    (tmp_path / ".hidden.txt").write_text("secret")
+    (tmp_path / ".hidden.txt").write_text("secret", encoding="utf-8")
     (tmp_path / "sub").mkdir()
     (tmp_path / "sub" / "nested.pdf").write_bytes(b"n")
     return tmp_path
@@ -182,16 +197,16 @@ def test_write_creates_nested_dirs(tmp_path):
     assert result["success"] is True
     assert result["created"] is True
     assert result["bytes_written"] == len("# Summary\nPython dev".encode())
-    assert target.read_text() == "# Summary\nPython dev"
+    assert target.read_text(encoding="utf-8") == "# Summary\nPython dev"
 
 
 def test_write_overwrite(tmp_path):
     target = tmp_path / "file.txt"
-    target.write_text("old")
+    target.write_text("old", encoding="utf-8")
     result = fs_tools.write_file(str(target), "new")
     assert result["success"] is True
     assert result["created"] is False
-    assert target.read_text() == "new"
+    assert target.read_text(encoding="utf-8") == "new"
 
 
 def test_write_unicode(tmp_path):
@@ -226,7 +241,7 @@ def test_search_case_insensitive(txt_file):
 
 def test_search_context(tmp_path):
     path = tmp_path / "long.txt"
-    path.write_text("a" * 200 + " Kubernetes " + "b" * 200)
+    path.write_text("a" * 200 + " Kubernetes " + "b" * 200, encoding="utf-8")
     match = fs_tools.search_in_file(str(path), "kubernetes")["matches"][0]
     assert "Kubernetes" in match["context"]
     assert match["context"].startswith("…") and match["context"].endswith("…")

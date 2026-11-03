@@ -257,8 +257,8 @@ def test_env_files_from_the_folder_and_the_data_home(tmp_path, monkeypatch):
     home, work = tmp_path / "home", tmp_path / "work"
     home.mkdir()
     work.mkdir()
-    (home / ".env").write_text("OPENAI_MODEL=from-home\nSHORTLIST_SIZE=7\n")
-    (work / ".env").write_text("OPENAI_MODEL=from-folder\n")
+    (home / ".env").write_text("OPENAI_MODEL=from-home\nSHORTLIST_SIZE=7\n", encoding="utf-8")
+    (work / ".env").write_text("OPENAI_MODEL=from-folder\n", encoding="utf-8")
     for name in ("OPENAI_MODEL", "SHORTLIST_SIZE"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("RESUME_SHORTLISTER_HOME", str(home))
