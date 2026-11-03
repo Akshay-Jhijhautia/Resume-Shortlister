@@ -1,4 +1,4 @@
-# Changelog
+# Changelog 3rd Novemver, 2026
 
 ## 1.2.0 (unreleased)
 
