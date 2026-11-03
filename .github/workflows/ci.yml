@@ -1,5 +1,6 @@
-# On every push and pull request: the tests on Windows, macOS and Linux, and the one-line
-# installers on each, installing the package just built and starting the web app.
+# On every push and pull request, and before every release (release.yml runs it): the tests
+# on Windows, macOS and Linux, and the one-line installers on each, installing the package
+# just built and starting the web app.
 # Actions are pinned to a commit (a tag can be moved); Dependabot proposes updates.
 name: CI
 
@@ -8,6 +9,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
