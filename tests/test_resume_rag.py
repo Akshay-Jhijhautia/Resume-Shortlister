@@ -385,3 +385,14 @@ Payroll Clerk, Fabrikam (Jan 2016 - Dec 2018)
     assert resume_rag.term_facts(listed_only, "Workday", TODAY) == (True, None)  # named, but not dated
     claimed = resume_rag.split_sections("SUMMARY\n6 years of Workday administration.")
     assert resume_rag.term_facts(claimed, "Workday", TODAY) == (True, 6.0)
+
+
+def test_paths_are_shown_short_with_this_systems_separator(tmp_path, monkeypatch):
+    home, work = tmp_path / "home", tmp_path / "work"
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    work.mkdir()
+    monkeypatch.chdir(work)
+    assert resume_rag.display_path(str(work / "applicants" / "a.pdf")) == str(Path("applicants", "a.pdf"))
+    # "~\AppData\Local\..." on Windows, never "~/AppData\Local\..."
+    assert resume_rag.display_path(str(home / "Downloads" / "applicants")) == str(Path("~", "Downloads", "applicants"))
+    assert resume_rag.display_path(str(tmp_path / "elsewhere")) == str(tmp_path / "elsewhere")

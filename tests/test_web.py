@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from resume_shortlister import app as cli_app
 from resume_shortlister.pools import ResumePool
+from resume_shortlister.rag.resume_rag import display_path
 from resume_shortlister.schemas import IntentDecision, InterviewQuestion, InterviewQuestions, Requirements
 from resume_shortlister.services import Services
 from resume_shortlister.config import Settings
@@ -233,7 +234,7 @@ def test_a_folder_is_loaded_and_reloaded_after_a_restart(client, make_services, 
     restarted = TestClient(create_app(make_services, token=TOKEN), base_url="http://127.0.0.1",
                            headers={TOKEN_HEADER: TOKEN})
     snapshot = restarted.get(f"/api/sessions/{session_id}").json()
-    assert snapshot["notice"].startswith(f"Resumes in {folder}") and "1 ready" in snapshot["notice"]
+    assert snapshot["notice"].startswith(f"Resumes in {display_path(str(folder))}") and "1 ready" in snapshot["notice"]
     assert restarted.get(f"/api/sessions/{session_id}").json()["notice"] is None  # said once
 
 

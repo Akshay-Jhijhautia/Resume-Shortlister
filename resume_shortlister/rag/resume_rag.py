@@ -1152,8 +1152,8 @@ class ResumeRAG:
 
 def display_path(path: str) -> str:
     """``path`` relative to the working directory when inside it, else ``~/...`` under
-    the home directory, else as given."""
-    for base, prefix in ((Path.cwd(), ""), (Path.home(), "~/")):
+    the home directory (``~\\...`` on Windows), else as given."""
+    for base, prefix in ((Path.cwd(), ""), (Path.home(), "~" + os.sep)):
         try:
             return prefix + str(Path(path).relative_to(base))
         except ValueError:
