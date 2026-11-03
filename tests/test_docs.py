@@ -3,6 +3,7 @@
 import re
 
 import matching_agent
+from scripts import pypi_readme
 from tests.fakes import FakeChatModel
 from tests.paths import ROOT
 
@@ -45,3 +46,17 @@ def test_every_link_between_the_docs_resolves():
             elif anchor and target.suffix == ".md" and anchor not in _anchors(target.read_text()):
                 broken.append(f"{doc}: {link} (no such heading)")
     assert broken == []
+
+
+def test_the_pypi_readme_links_every_file_on_github_at_the_release_tag():
+    readme = (ROOT / "README.md").read_text()
+    repo = pypi_readme.repository_url()
+    published = pypi_readme.absolute_links(readme, "v9.9.9", repo)
+
+    links = LINK_RE.findall(published)
+    assert links and all(re.match(r"https:", link) for link in links)
+    assert f"]({repo}/blob/v9.9.9/LICENSE)" in published
+    assert f"]({repo}/blob/v9.9.9/README.md#limitations)" in published
+    raw = repo.replace("https://github.com/", "https://raw.githubusercontent.com/")
+    assert f"]({raw}/v9.9.9/docs/images/web-shortlist.png)" in published
+    assert LINK_RE.sub("", published) == LINK_RE.sub("", readme)  # only the links changed

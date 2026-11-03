@@ -1,0 +1,50 @@
+# Publish to PyPI when a version tag is pushed (git tag v1.2.0 && git push origin v1.2.0).
+# Run it by hand (Actions > Release > Run workflow) to publish to TestPyPI instead, as a
+# rehearsal. Uses trusted publishing, so no token is stored: on pypi.org and test.pypi.org,
+# add this repository and this workflow (release.yml, environments "pypi" and "testpypi")
+# as a trusted publisher once.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Check the tag matches the package version
+        if: github.ref_type == 'tag'
+        run: |
+          version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' resume_shortlister/__init__.py)"
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME, package $version"; exit 1; }
+      - name: Test
+        run: uv run --python 3.12 --extra dev --extra anthropic --extra google --extra ollama pytest -q
+      - name: Point the README's links at GitHub for the PyPI page
+        run: uv run --python 3.12 --no-project python -m scripts.pypi_readme "$GITHUB_SHA"
+      - name: Build
+        run: uv build
+      - name: Check the browser app is in the wheel
+        run: unzip -l dist/*.whl | grep -q 'resume_shortlister/web/static/index.html'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_type == 'tag' && 'pypi' || 'testpypi' }}
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ github.ref_type == 'tag' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}

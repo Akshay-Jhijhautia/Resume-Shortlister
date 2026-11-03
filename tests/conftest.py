@@ -10,8 +10,11 @@ from tests.paths import RESUMES_DIR
 
 @pytest.fixture(autouse=True)
 def isolated_home(monkeypatch, tmp_path):
-    """Settings read from the environment use a temporary data home, never ~/.resume-shortlister."""
+    """Settings read from the environment use a temporary data home, never ~/.resume-shortlister,
+    and a made-up OpenAI key: tests pass without one and never send a developer's real key
+    (a `.env` file does not override a variable already set)."""
     monkeypatch.setenv("RESUME_SHORTLISTER_HOME", str(tmp_path / "resume-shortlister-home"))
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-a-real-key")
     config.get_settings.cache_clear()
     yield
     config.get_settings.cache_clear()

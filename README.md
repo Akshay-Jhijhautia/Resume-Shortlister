@@ -49,51 +49,37 @@ and [Limitations](#limitations) before relying on it.
 
 Runs on **macOS and Linux**. Windows support is planned for the next version.
 
-You need Python 3.11 or newer, git, and an API key for a chat model: OpenAI by
-default, or Anthropic, Google Gemini, a local Ollama model or any
-OpenAI-compatible server ([providers](docs/configuration.md#chat-model-providers)).
+You need an API key for a chat model: OpenAI by default, or Anthropic, Google
+Gemini, a local Ollama model or any OpenAI-compatible server
+([providers](docs/configuration.md#chat-model-providers)). Nothing else: no
+Python, no git.
 
 ### 1. Install
 
-**macOS**
+Open a terminal (on macOS: Applications › Utilities › Terminal), paste this line
+and press Enter:
 
 ```bash
-python3 --version     # 3.11 or newer; if not, install Python from python.org or `brew install python@3.12`
-git --version         # if missing, macOS offers to install it
-
-mkdir -p ~/resume-shortlister && cd ~/resume-shortlister
-python3 -m venv .venv
-source .venv/bin/activate
-pip install "resume-shortlister @ git+https://github.com/Akshay-Jhijhautia/resume-shortlister.git"
+curl -LsSf https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.sh | sh
 ```
 
-**Linux** (Ubuntu 24.04 and Debian; other distributions: install Python 3.11+ and git with
-their package manager)
+On Linux without curl (`command not found: curl`), use
+`wget -qO- https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.sh | sh`.
 
-```bash
-sudo apt update && sudo apt install -y python3 python3-venv git
+It takes a minute or two, then asks once for your OpenAI API key (what you type
+is hidden; press Enter to skip if you use another provider). The key stays in
+`~/.resume-shortlister/.env` on your computer; the app never shows it. Run the
+same line again to update to the newest version; your key and data are kept.
 
-mkdir -p ~/resume-shortlister && cd ~/resume-shortlister
-python3 -m venv .venv
-source .venv/bin/activate
-pip install "resume-shortlister @ git+https://github.com/Akshay-Jhijhautia/resume-shortlister.git"
-```
+What it does ([the script](install.sh)): it installs [uv](https://docs.astral.sh/uv/),
+a small installer for Python apps, into `~/.local/bin`; uv downloads its own
+copy of Python and installs the `resume-shortlister` command, adding
+`~/.local/bin` to your shell's PATH. No sudo; your system's Python and other
+apps are left alone.
 
-On Ubuntu 22.04, whose Python is 3.10, install `python3.11 python3.11-venv` instead and
-create the environment with `python3.11 -m venv .venv`.
+### 2. Start it
 
-Installing takes a minute or two. Check it with `resume-shortlister --version`.
-
-### 2. Add your API key (once)
-
-```bash
-mkdir -p ~/.resume-shortlister
-nano ~/.resume-shortlister/.env       # one line: OPENAI_API_KEY=sk-...   (save: Ctrl-O, Enter; exit: Ctrl-X)
-```
-
-The key stays in that file on your computer; the app never shows it.
-
-### 3. Start it
+Open a new terminal window and run:
 
 ```bash
 resume-shortlister web
@@ -111,17 +97,35 @@ model (about 200 MB) and reads every resume, which takes a few minutes for a few
 hundred resumes ("Working…" meanwhile); later screenings of the same folder take
 about a minute.
 
-Next time: `cd ~/resume-shortlister && source .venv/bin/activate && resume-shortlister web`.
-Your screenings are saved under Sessions.
+Next time, just run `resume-shortlister web`. Your screenings are saved under Sessions.
 
 | If | Then |
 | --- | --- |
-| `command not found: resume-shortlister` | Run `source .venv/bin/activate` in `~/resume-shortlister` first |
-| An amber dot: "OPENAI_API_KEY is not set" | Check `~/.resume-shortlister/.env`, then restart the app |
+| `command not found: resume-shortlister` | Open a new terminal window, or run the install line again |
+| An amber dot: "OPENAI_API_KEY is not set" | Add `OPENAI_API_KEY=sk-...` to `~/.resume-shortlister/.env` (`nano ~/.resume-shortlister/.env`), then restart the app |
 | "Address already in use" | It is already running in another terminal, or use `resume-shortlister web --port 8766` |
-| "requires a different Python" | Your Python is older than 3.11: see the Linux note above |
 
-### 4. Or use it in the terminal
+To remove it: `resume-shortlister clean --all` (your data), then
+`uv tool uninstall resume-shortlister`.
+
+<details>
+<summary>Install with pip instead (for developers)</summary>
+
+With Python 3.11 or newer:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install "resume-shortlister[anthropic,google,ollama]"
+# or the latest main branch (needs git):
+pip install "resume-shortlister @ git+https://github.com/Akshay-Jhijhautia/resume-shortlister.git"
+```
+
+Then put your key in `~/.resume-shortlister/.env`. To work on the code, see
+[development](docs/development.md).
+
+</details>
+
+### 3. Or use it in the terminal
 
 The same screening and conversation, without a browser:
 
@@ -135,7 +139,7 @@ you> Write 3 interview questions for the top candidate
 resume-shortlister screen --jd-file job.pdf --resumes ~/Downloads/applicants   # one shot
 ```
 
-### 5. Your data stays on your computer
+### 4. Your data stays on your computer
 
 Nothing is uploaded to us: there is no account and no server of ours. Everything the
 app keeps is in one folder on your computer, `~/.resume-shortlister`: the index of each
@@ -215,7 +219,7 @@ reviewing the result.
   the chat model you configure; use a local model (Ollama) if it must not leave
   your machine. `resume-shortlister clean` deletes what has not been used for 30
   days, and `resume-shortlister clean --all --yes` every piece of candidate data
-  ([step 5](#5-your-data-stays-on-your-computer)).
+  ([step 4](#4-your-data-stays-on-your-computer)).
 - **Candidates can game resumes.** Instruction-like text is flagged, but treat
   any result as a starting point for a conversation, not a verdict.
 

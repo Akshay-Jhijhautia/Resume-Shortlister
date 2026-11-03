@@ -1,9 +1,17 @@
 # Changelog
 
-## Unreleased (1.2)
+## 1.2.0 (unreleased)
 
 ### Added
 
+- **One-line install** for macOS and Linux (`install.sh`): needs no Python or
+  git, with curl or wget. It installs uv, which brings its own Python, installs
+  the `resume-shortlister` command with every chat provider, and asks once for
+  the OpenAI API key (hidden as you type, saved readable by you only). Running it
+  again updates and keeps the key. Tested on macOS and clean Ubuntu 24.04 and
+  22.04. Released to PyPI on version tags (TestPyPI when run by hand), so
+  `pip install resume-shortlister` works; the README's links point at GitHub on
+  the PyPI page.
 - **Local web API** (`resume-shortlister web`): sessions, streamed turns
   (Server-Sent Events), folder loading, resume uploads, candidate reports and
   the report download, served on 127.0.0.1 only, with a per-launch token and a
@@ -125,6 +133,8 @@ Found by screening 684 real resumes (LiveCareer examples) for the first time:
 - `Settings(home=...)` kept the index, sessions, uploads, models and stored
   answers in the default data home; every path not set on its own now follows
   `home`.
+- The test suite passed only with a real OpenAI key in the repository's `.env`;
+  it now uses a made-up key, so it passes anywhere and never sends a real one.
 - `scripts/stability_check.py` and `scripts/requirements_stability.py` stop
   with a one-line error when the provider refuses (no credits, rate limit)
   instead of a traceback.
