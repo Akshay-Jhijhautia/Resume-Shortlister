@@ -11,13 +11,18 @@ requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Akshay Jhijhautia" }]
-keywords = ["resume-screening", "recruitment", "llm-agent", "langgraph", "rag", "explainable-ai", "local-first", "cli"]
+keywords = ["resume-screening", "recruitment", "recruiting", "hiring", "hr", "ats", "shortlisting", "explainable-ai",
+            "local-first", "privacy", "llm-agent", "langgraph", "rag"]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
     "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Other Audience",
     "Intended Audience :: Developers",
-    "Intended Audience :: Information Technology",
-    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -62,6 +67,8 @@ resume-shortlister = "resume_shortlister.app:main"
 profile-match = "resume_shortlister.app:main"
 
 [project.urls]
+Homepage = "https://github.com/Akshay-Jhijhautia/resume-shortlister"
+Documentation = "https://github.com/Akshay-Jhijhautia/resume-shortlister/blob/main/docs/usage.md"
 Repository = "https://github.com/Akshay-Jhijhautia/resume-shortlister"
 Changelog = "https://github.com/Akshay-Jhijhautia/resume-shortlister/blob/main/CHANGELOG.md"
 Issues = "https://github.com/Akshay-Jhijhautia/resume-shortlister/issues"

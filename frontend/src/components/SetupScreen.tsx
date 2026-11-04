@@ -49,6 +49,9 @@ export function SetupScreen({ load, save, onDone, onCancel }: Props) {
           Resume Shortlister reads resumes against your job description with an AI model. Choose the provider you have an
           account with, and paste its API key (a password for programs, made on the provider's website).
         </p>
+        <p className="muted">
+          An API key is not part of a ChatGPT or Claude subscription: the provider bills its use separately.
+        </p>
         {options && chosen && (
           <form onSubmit={submit}>
             <fieldset className="choices">

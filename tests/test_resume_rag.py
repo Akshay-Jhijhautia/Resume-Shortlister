@@ -396,3 +396,16 @@ def test_paths_are_shown_short_with_this_systems_separator(tmp_path, monkeypatch
     # "~\AppData\Local\..." on Windows, never "~/AppData\Local\..."
     assert resume_rag.display_path(str(home / "Downloads" / "applicants")) == str(Path("~", "Downloads", "applicants"))
     assert resume_rag.display_path(str(tmp_path / "elsewhere")) == str(tmp_path / "elsewhere")
+
+
+@pytest.mark.parametrize("line", [
+    "Oracle SQL", "AWS Lambda Kubernetes", "Advanced Troubleshooting Techniques", "CONSTRUCTION WORK",
+    "CONSTRUCTION ADMINISTRATION AND OBSERVATION", "Student Leadership Apprentice Program",
+])
+def test_skills_headings_and_courses_are_not_names(line):
+    assert resume_rag._extract_name(resume_rag.split_sections(f"{line}\n\nEXPERIENCE\nAnalyst, Contoso")) is None
+
+
+@pytest.mark.parametrize("line", ["Ruby Swift", "RUBY SWIFT", "Jean DUPONT", "Mary Ann de la Cruz", "Tam Nguyen"])
+def test_names_are_still_names(line):
+    assert resume_rag._extract_name(resume_rag.split_sections(f"{line}\n\nEXPERIENCE\nAnalyst, Contoso")) == line
