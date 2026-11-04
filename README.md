@@ -7,6 +7,9 @@
 **Explainable resume screening that runs on your computer. It ranks and
 explains; the recruiter decides.**
 
+[Install](#get-started) · [What it offers](#what-it-offers) · [How it is different](#how-it-is-different) ·
+[Try it with sample resumes](#try-it-with-sample-resumes) · [Your data](#your-data-stays-on-your-computer)
+
 Give it the resumes for a job, either a folder or files you drop on the page,
 and the job description. It screens every resume, recommends whom to interview,
 and shows the evidence behind every score: the line in the resume that proves
@@ -63,6 +66,14 @@ Runs on **Windows 10 and 11, macOS and Linux**. You need an API key from an AI
 provider (OpenAI, Anthropic or Google Gemini), or [Ollama](https://ollama.com)
 on your computer. Nothing else: no Python, no git.
 
+An API key is not part of a ChatGPT or Claude subscription: you make it on the
+provider's developer site ([OpenAI](https://platform.openai.com/api-keys),
+[Anthropic](https://console.anthropic.com/settings/keys),
+[Google](https://aistudio.google.com/apikey)), which bills its use separately.
+Screening sends resume text, without names or contact details, to that provider:
+check your organisation's policy on candidate data first, or use Ollama, with
+which nothing leaves your computer.
+
 ### Install
 
 **Windows:** open PowerShell (Start menu, type "PowerShell"), paste this line
@@ -100,6 +111,13 @@ What it does: [install.ps1](install.ps1), [install.sh](install.sh).
    interview questions. Ask follow-ups in the conversation below the shortlist.
 
 **Quit** (top right) stops the app; Sessions reopens any earlier screening.
+
+### Try it with sample resumes
+
+Download [resume-shortlister-sample-resumes.zip](https://github.com/Akshay-Jhijhautia/resume-shortlister/releases/latest/download/resume-shortlister-sample-resumes.zip):
+100 fictional resumes and three job descriptions (the people and companies do not
+exist). Unzip it, load the `resumes` folder, and paste a job description from
+`job-descriptions`. Its `README.txt` walks you through it.
 
 ### For the best results
 

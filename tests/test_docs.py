@@ -1,9 +1,13 @@
 """The documentation stays true: its graph diagram is the compiled graph, and its links resolve."""
 
 import re
+import zipfile
+
+import pytest
 
 import matching_agent
-from scripts import ci_failures, pypi_readme
+from resume_shortlister import __version__
+from scripts import ci_failures, pypi_readme, release_notes, sample_kit
 from tests.fakes import FakeChatModel
 from tests.paths import ROOT
 
@@ -70,3 +74,23 @@ def test_ci_failures_become_annotations(tmp_path):
         '<testcase classname="tests.test_ok" name="test_fine"/></testsuite></testsuites>', encoding="utf-8")
     assert ci_failures.annotations(str(report)) == [
         "::error title=tests.test_pools.test_split[a%2Cb]::assert 1 == 2%0A50%25 done: C:\\x"]
+
+
+def test_the_release_notes_are_the_versions_changelog_section():
+    changelog = "# Changelog\n\n## 1.5.1 (2026-11-05)\n\nFixes.\n\n### Fixed\n\n- A thing.\n\n## 1.5.0 (2026-11-04)\n\nOlder.\n"
+    text = release_notes.notes("1.5.1", changelog)
+    assert text.startswith("Fixes.\n\n### Fixed\n\n- A thing.\n") and "Older." not in text
+    assert "install.ps1 | iex" in text and "install.sh | sh" in text and "sample-resumes.zip" in text
+    with pytest.raises(ValueError, match="no section for 9.9.9"):
+        release_notes.notes("9.9.9", changelog)
+    assert release_notes.notes(__version__, (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))  # this version has one
+
+
+def test_the_sample_kit_has_resumes_job_descriptions_and_a_guide(tmp_path):
+    archive = sample_kit.build(tmp_path / "kit.zip", count=12)
+    with zipfile.ZipFile(archive) as kit:
+        names = kit.namelist()
+        assert "resume-shortlister-samples/README.txt" in names
+        assert "made up" in kit.read("resume-shortlister-samples/README.txt").decode("utf-8")
+    assert sum(name.startswith("resume-shortlister-samples/resumes/") for name in names) == 12
+    assert {name.rsplit("/", 1)[1] for name in names if "/job-descriptions/" in name} == set(sample_kit.ROLES.values())

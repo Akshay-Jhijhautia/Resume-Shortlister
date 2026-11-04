@@ -39,7 +39,7 @@ DEFAULT_DB_DIR = "index"
 COLLECTION_NAME = "resumes"
 # Part of every resume's content hash: bump it when chunking or metadata
 # extraction changes so the next `index` run refreshes every resume.
-PIPELINE_VERSION = "8"
+PIPELINE_VERSION = "9"
 
 MAX_CHUNK_CHARS = 1500
 HEADER_SECTION = "Header"
@@ -352,13 +352,18 @@ _DEGREE_PATTERNS = [
 _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _CONTACT_LINE_RE = re.compile(r"@|https?://|www\.|linkedin|github|\d{3}", re.IGNORECASE)
 _NOT_A_NAME = {"resume", "curriculum vitae", "cv", "profile"}
-# Words of job titles and headings: a line with one is not a name. Many resumes open with a
-# title ("INFORMATION TECHNOLOGY MANAGER") or a heading ("CAREER OVERVIEW") instead of a name.
-# Common surnames that are also occupations (Cook, Baker, Mason, Taylor) are left out.
+# Words of job titles, headings and topics: a line with one is not a name. Many resumes open
+# with a title ("INFORMATION TECHNOLOGY MANAGER"), a heading ("CAREER OVERVIEW") or a course
+# ("Advanced Troubleshooting Techniques") instead of a name. Common surnames that are also
+# occupations (Cook, Baker, Mason, Taylor) are left out.
 _TITLE_WORDS = {
-    "access", "accomplishments", "accountant", "accounting", "administrative", "administrator",
-    "adviser", "advisor", "advocate", "agent", "analysis", "analyst", "architect", "assistant",
-    "associate", "attorney", "auditor", "base", "business", "career", "chef", "chief", "clerk",
+    "access", "accomplishments", "accountant", "accounting", "achievements", "administration",
+    "administrative", "administrator", "advanced", "adviser", "advisor", "advocate", "agent",
+    "analysis", "analyst", "apprentice", "architect", "assistant", "associate", "attorney",
+    "auditor", "awards", "base", "business", "career", "certifications", "chef", "chief", "clerk",
+    "communication", "construction", "education", "experience", "interests", "languages",
+    "leadership", "observation", "program", "projects", "references", "skills", "student",
+    "techniques", "troubleshooting", "volunteer", "work",
     "consultant", "control", "controller", "coordinator", "core", "craftsman", "customer",
     "data", "designer", "developer", "development", "director", "electrician", "engineer",
     "engineering", "executive", "expert", "finance", "financial", "head", "highlights", "hr",
@@ -394,7 +399,13 @@ MAX_RAW_SKILL_CHARS = 40
 
 def _is_name_word(word: str) -> bool:
     letters = word.replace(".", "").replace("'", "").replace("-", "")
-    return letters.isalpha() and (word[0].isupper() or word in _NAME_PARTICLES)
+    return letters.isalpha() and (word[0].isupper() or word in _NAME_PARTICLES) and not _is_acronym_skill(word)
+
+
+def _is_acronym_skill(word: str) -> bool:
+    """A skill whose name is in capitals, written so ("SQL", "AWS"): never part of a name.
+    "RUBY SWIFT" is still a name: those skills are spelled "Ruby" and "Swift"."""
+    return len(word) > 1 and word.isupper() and skills_vocab.normalize_skill(word) == word
 
 
 def _extract_name(sections: dict[str, str]) -> str | None:

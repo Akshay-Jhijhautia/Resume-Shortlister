@@ -1,8 +1,39 @@
 # Changelog
 
+## 1.5.1 (2026-11-04)
+
+Ready to share.
+
+### Added
+
+- **Sample resumes to try it with**: every GitHub release now has
+  `resume-shortlister-sample-resumes.zip`, 100 fictional resumes and three job
+  descriptions, with a short guide. GitHub releases are made with each
+  version's notes and its package files.
+- The README and the setup screen say that an API key is not part of a ChatGPT
+  or Claude subscription, and the README that screening sends resume text
+  (without names or contact details) to the provider, so to check your
+  organisation's policy first.
+
+### Changed
+
+- The PyPI page describes who it is for (people screening resumes, on Windows,
+  macOS and Linux) and links to the documentation; fresh screenshots; a
+  preview image for links to the repository (`docs/images/social-preview.png`).
+- `SECURITY.md`: 1.5 is the supported version.
+
+### Fixed
+
+- A skill line, a heading or a course at the top of a resume ("Oracle SQL",
+  "CONSTRUCTION WORK", "Advanced Troubleshooting Techniques") was read as the
+  candidate's name, and blind screening then hid those words from the model.
+  Found in 5 of 684 real resumes; names that are also skills ("Ruby Swift")
+  are still names. Folders are re-indexed once.
+
 ## 1.5.0 (2026-11-04)
 
 An app icon: no terminal needed.
+=======
 
 ### Added
 
