@@ -163,10 +163,11 @@ def test_an_unreachable_pypi_gives_the_last_answer_and_waits_a_day(tmp_path):
     assert json.loads(cache.read_text(encoding="utf-8"))["checked"] == now.isoformat()  # not asked again today
 
 
-@pytest.mark.parametrize("latest, newer", [("9.0.0", True), ("1.3.0", False), (__version__, False),
-                                           ("10.0.0rc1", False), (None, False)])
+@pytest.mark.parametrize("latest, newer", [("9.0.0", True), ("1.3.1", True), ("1.10.0", True), ("1.3.0", False),
+                                           ("1.2.9", False), ("10.0.0rc1", False), (None, False)])
 def test_only_a_later_release_is_offered(latest, newer):
     assert updates.is_newer(latest, "1.3.0") is newer
+    assert not updates.is_newer(__version__, __version__)
 
 
 def test_the_update_notice(fresh, monkeypatch):

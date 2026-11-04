@@ -1,8 +1,5 @@
 # Changelog
 
-<<<<<<< Updated upstream
-## Unreleased
-=======
 ## 1.5.1 (2026-11-04)
 
 Ready to share.
@@ -36,7 +33,7 @@ Ready to share.
 ## 1.5.0 (2026-11-04)
 
 An app icon: no terminal needed.
->>>>>>> Stashed changes
+=======
 
 ### Added
 
