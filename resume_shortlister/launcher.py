@@ -212,7 +212,7 @@ def install_launcher(system: str | None = None, home: Path | None = None) -> lis
     """Make (or refresh) the icon that opens the app; the paths made."""
     system = system or platform.system()
     paths = launcher_paths(system, home)
-    command = python_command(windowless=True) + ["open"]
+    command = python_command(windowless=system == "Windows") + ["open"]  # a Windows icon opens no console
     if system == "Darwin":
         _mac_app(paths[0], command)
     elif system == "Windows":
