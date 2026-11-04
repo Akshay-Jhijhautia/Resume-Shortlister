@@ -1,6 +1,6 @@
 # On every push and pull request, and before every release (release.yml runs it): the tests
-# on Windows, macOS and Linux, and the one-line installers on each, installing the package
-# just built and starting the web app.
+# on Windows, macOS and Linux, and on each the one-line installer (installing the package
+# just built), the app's icon, opening and stopping the app, and the uninstaller.
 # Actions are pinned to a commit (a tag can be moved); Dependabot proposes updates.
 name: CI
 
@@ -63,11 +63,36 @@ jobs:
       - name: Install with install.sh
         if: runner.os != 'Windows'
         run: sh install.sh < /dev/null
-      - name: Start the web app and open its page
+      - name: The icon is there
         shell: bash
         run: |
-          "$HOME/.local/bin/resume-shortlister" --version
-          "$HOME/.local/bin/resume-shortlister" web --no-browser --port 8765 > web.log 2>&1 &
-          for _ in $(seq 60); do curl -fsS http://127.0.0.1:8765/ -o page.html 2>/dev/null && break; sleep 2; done
-          grep -q 'name="resume-shortlister-token"' page.html || { cat web.log; exit 1; }
-          echo "The web app answered."
+          case "$RUNNER_OS" in
+            macOS) test -x "$HOME/Applications/Resume Shortlister.app/Contents/MacOS/resume-shortlister" ;;
+            Linux) test -f "$HOME/.local/share/applications/resume-shortlister.desktop" ;;
+            Windows) test -f "$(cygpath "$APPDATA")/Microsoft/Windows/Start Menu/Programs/Resume Shortlister.lnk" ;;
+          esac
+      - name: Open the app as its icon does, then stop it
+        shell: bash
+        run: |
+          app="$HOME/.local/bin/resume-shortlister"
+          "$app" --version
+          url="$("$app" open --no-browser)" || { cat "$HOME/.resume-shortlister/app.log"; exit 1; }
+          curl -fsS "$url" | grep -q 'name="resume-shortlister-token"'
+          echo "The app answered at $url."
+          "$app" stop | grep -q "Stopped Resume Shortlister."
+          ! curl -fsS "$url" > /dev/null 2>&1
+      - name: Uninstall with uninstall.ps1
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy ByPass -Command "Get-Content -Raw uninstall.ps1 | iex" < NUL
+      - name: Uninstall with uninstall.sh
+        if: runner.os != 'Windows'
+        run: sh uninstall.sh < /dev/null
+      - name: What the installer made is gone; the data is kept (nobody said to delete it)
+        shell: bash
+        run: |
+          test ! -e "$HOME/.local/bin/resume-shortlister" && test ! -e "$HOME/.local/bin/resume-shortlister.exe"
+          test ! -e "$HOME/Applications/Resume Shortlister.app"
+          test ! -e "$HOME/.local/share/applications/resume-shortlister.desktop"
+          if [ "$RUNNER_OS" = Windows ]; then test ! -e "$(cygpath "$APPDATA")/Microsoft/Windows/Start Menu/Programs/Resume Shortlister.lnk"; fi
+          test -d "$HOME/.resume-shortlister"

@@ -8,6 +8,9 @@
     resume-shortlister clean    [--older-than DAYS] [--yes]            remove old uploads, indexes, sessions, answers
     resume-shortlister cache    [--clear]                              stored model answers (reproducible runs)
     resume-shortlister web      [--port PORT] [--no-browser] [--host]  the app in your browser (this machine only)
+    resume-shortlister open     [--no-browser]                         open the app, starting it in the background
+    resume-shortlister stop                                            stop the app started with open
+    resume-shortlister launcher [--remove]                             make (or remove) the app's icon
     resume-shortlister --version
 
 PATH is a folder of resumes or one or more resume files (files are copied
@@ -224,6 +227,43 @@ def web(argv: list[str]) -> int:
     return 0
 
 
+def open_command(argv: list[str]) -> int:
+    from . import launcher
+
+    parser = _parser("open", "Open Resume Shortlister in your browser, starting it in the background if needed.")
+    parser.add_argument("--no-browser", action="store_true", help="Only make sure it runs, and print its address.")
+    args = parser.parse_args(argv)
+    try:
+        print(launcher.open_app(browser=not args.no_browser))
+    except (OSError, RuntimeError) as exc:
+        launcher.tell(str(exc))
+        return 1
+    return 0
+
+
+def stop_command(argv: list[str]) -> int:
+    from . import launcher
+
+    _parser("stop", "Stop Resume Shortlister running in the background (Quit in the app does the same).").parse_args(argv)
+    print("Stopped Resume Shortlister." if launcher.stop() else "Resume Shortlister was not running.")
+    return 0
+
+
+def launcher_command(argv: list[str]) -> int:
+    from . import launcher
+
+    parser = _parser("launcher", "Make the icon that opens Resume Shortlister: in Applications (macOS), "
+                                 "the Start menu and the desktop (Windows) or the app menu (Linux).")
+    parser.add_argument("--remove", action="store_true", help="Remove the icon instead.")
+    args = parser.parse_args(argv)
+    if args.remove:
+        removed = launcher.remove_launcher()
+        print("\n".join(f"Removed {path}" for path in removed) or "There was no icon to remove.")
+    else:
+        print("\n".join(f"Made {path}" for path in launcher.install_launcher()))
+    return 0
+
+
 # --- entry point ----------------------------------------------------------------------------------------
 
 # Command name -> handler taking the remaining arguments.
@@ -236,6 +276,9 @@ COMMANDS: dict[str, Callable[[list[str]], int]] = {
     "clean": clean,
     "cache": cache,
     "web": web,
+    "open": open_command,
+    "stop": stop_command,
+    "launcher": launcher_command,
 }
 
 

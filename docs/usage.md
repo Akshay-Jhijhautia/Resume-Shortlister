@@ -4,8 +4,13 @@ Install it first ([README](../README.md#get-started)). Settings, providers and e
 
 ## In your browser
 
+Open **Resume Shortlister** from Applications (macOS), the Start menu or the desktop
+(Windows) or the app menu (Linux), where the installer put it. It starts in the
+background and opens in your browser; **Quit** in the page stops it. From a terminal:
+
 ```bash
-resume-shortlister web     # opens http://127.0.0.1:8765/
+resume-shortlister open    # the same as the icon
+resume-shortlister web     # in this terminal instead, until Ctrl-C (or Quit)
 ```
 
 ![The shortlist and the conversation in the browser](images/web-shortlist.png)
@@ -25,16 +30,19 @@ Then:
   them, or change the role ("make Docker a must-have"); suggested follow-ups
   use your shortlist.
 - **Sessions** reopen any earlier screening, and **Settings** show the model,
-  whether its key is set, the screening rules and where your data is.
+  whether its key is set, the screening rules and where your data is, and
+  change the AI provider and key.
 
 ![A candidate's evidence, score breakdown and recommendation](images/web-candidate.png)
 
 The app runs on this computer only: it listens on 127.0.0.1, answers only
 requests addressed to it there, and its API needs a token that only its own
 page receives, created at each start. It needs no Node: the interface is built
-into the package. Settings are changed in `~/.resume-shortlister/.env` (see
-[Configuration](configuration.md)), not in the page, so API keys never pass
-through the browser. Developing the interface: [frontend/README.md](../frontend/README.md).
+into the package. The setup page saves the AI provider and key in
+`~/.resume-shortlister/.env`, readable by you only, and no answer from the app
+ever contains a key; other settings go in that file too (see
+[Configuration](configuration.md)). Developing the interface:
+[frontend/README.md](../frontend/README.md).
 
 ## In the terminal
 
@@ -73,6 +81,9 @@ From a source checkout, `python main.py ...` runs the same commands.
 | `resume-shortlister clean --all [--yes]` | Every piece of candidate data, to start from scratch: every index, uploaded copy, saved session, stored model answer and the web app's reports. Keeps your settings (`.env`) and the embedding model; lists first, deletes with `--yes` |
 | `resume-shortlister cache [--clear]` | Stored model answers (see [Reproducible results](how-it-works.md#reproducible-results)); `--clear` deletes them |
 | `resume-shortlister web [--port PORT] [--no-browser]` | The app in your browser, on this computer only: screening, candidate details, interview questions and the chat |
+| `resume-shortlister open [--no-browser]` | What the app's icon runs: opens the app, starting it in the background when it is not running |
+| `resume-shortlister stop` | Stops the app started in the background (Quit in the page does the same) |
+| `resume-shortlister launcher [--remove]` | Makes (or removes) the app's icon; the installers and uninstallers run it |
 | `resume-shortlister --version` | The installed version |
 
 ### Local data

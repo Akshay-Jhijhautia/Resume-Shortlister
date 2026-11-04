@@ -75,6 +75,8 @@ include = ["resume_shortlister*"]
 [tool.setuptools.package-data]
 # The browser app, built from frontend/ into the package.
 "resume_shortlister.web" = ["static/*.html", "static/*.json", "static/assets/*"]
+# The app's icon, for the launchers (drawn by scripts/make_icons.py).
+"resume_shortlister" = ["assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

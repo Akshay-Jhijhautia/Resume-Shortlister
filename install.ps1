@@ -4,9 +4,10 @@
 #   powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.ps1 | iex"
 #
 # It installs uv (a small Python installer, into ~\.local\bin) unless you have it, lets uv
-# fetch its own Python, installs Resume Shortlister as the `resume-shortlister` command and
-# asks once for your OpenAI API key. No administrator rights, git or Python needed. Running
-# it again upgrades to the newest version and keeps your key and data.
+# fetch its own Python, installs Resume Shortlister as the `resume-shortlister` command,
+# asks once for your OpenAI API key, and puts Resume Shortlister in the Start menu and on
+# the desktop. No administrator rights, git or Python needed. Running it again upgrades to
+# the newest version and keeps your key and data. To remove it: uninstall.ps1, next to this file.
 #
 # Settings (environment variables), for testing or another source:
 #   RESUME_SHORTLISTER_PACKAGE   what to install (default: from PyPI, with every chat provider)
@@ -78,11 +79,24 @@ function Install-ResumeShortlister {
         Write-Host "The app asks for your API key when it first starts."
     }
 
+    # 4. The icon that opens the app: in the Start menu and on the desktop
+    & $command launcher *> $null
+    $madeIcon = $LASTEXITCODE -eq 0
+
     Write-Host ""
-    Write-Host "Done. Open a new PowerShell window and run:"
+    if ($madeIcon) {
+        Write-Host "Done. Open Resume Shortlister from the Start menu or the desktop."
+    } else {
+        Write-Host "Done."
+    }
+    Write-Host "Or, in a new PowerShell window: resume-shortlister open"
     Write-Host ""
-    Write-Host "    resume-shortlister web"
-    Write-Host ""
+
+    # Started now for the person at this computer.
+    if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+        Write-Host "Starting it now..."
+        & $command open *> $null
+    }
 }
 
 Install-ResumeShortlister
