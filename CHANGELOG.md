@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2026-11-04)
+
+For people who never open a terminal.
 
 ### Added
 
