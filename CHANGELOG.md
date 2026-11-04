@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.4.0 (2026-11-04)
+## 1.5.0 (2026-11-04)
 
-For people who never open a terminal.
+An app icon: no terminal needed.
 
 ### Added
 

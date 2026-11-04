@@ -1,4 +1,4 @@
-# Publish to PyPI when a version tag is pushed (git tag v1.4.0 && git push origin v1.4.0).
+# Publish to PyPI when a version tag is pushed (git tag v1.5.0 && git push origin v1.5.0).
 # Run it by hand (Actions > Release > Run workflow) to publish to TestPyPI instead, as a
 # rehearsal. Uses trusted publishing, so no token is stored: on pypi.org and test.pypi.org,
 # add this repository and this workflow (release.yml, environments "pypi" and "testpypi")
