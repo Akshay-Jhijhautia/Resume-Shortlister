@@ -1,8 +1,6 @@
 # Changelog
 
 ## Unreleased
-<<<<<<< Updated upstream
-=======
 
 ### Added
 
@@ -24,7 +22,6 @@
 ## 1.3.0 (2026-11-03)
 
 Windows.
->>>>>>> Stashed changes
 
 ### Added
 
@@ -37,17 +34,19 @@ Windows.
 - **Tests on Windows, macOS and Linux** on every push (GitHub Actions), with each
   system's installer installing the package just built and starting the web app.
 
+### Changed
+
+- A release is published only when the tests and the installers pass on Windows,
+  macOS and Linux (the release workflow runs CI first).
+- The release workflow uses the current versions of its GitHub actions (Node 24,
+  ending GitHub's deprecation warnings), pinned to commits; Dependabot proposes
+  updates monthly.
+
 ### Fixed
 
 - The installer hid what you type only after showing the key prompt, so a key
   typed or pasted at once could appear on screen. Typing is now hidden first,
   and shown again if you press Ctrl-C at the prompt.
-
-### Changed
-
-- The release workflow uses the current versions of its GitHub actions (Node 24,
-  ending GitHub's deprecation warnings), pinned to commits; Dependabot proposes
-  updates monthly.
 
 ## 1.2.0 (2026-11-03)
 

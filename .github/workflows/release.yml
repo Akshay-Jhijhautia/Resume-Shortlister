@@ -1,4 +1,4 @@
-# Publish to PyPI when a version tag is pushed (git tag v1.2.0 && git push origin v1.2.0).
+# Publish to PyPI when a version tag is pushed (git tag v1.3.0 && git push origin v1.3.0).
 # Run it by hand (Actions > Release > Run workflow) to publish to TestPyPI instead, as a
 # rehearsal. Uses trusted publishing, so no token is stored: on pypi.org and test.pypi.org,
 # add this repository and this workflow (release.yml, environments "pypi" and "testpypi")
@@ -11,8 +11,15 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+  ci:  # the tests and installers on Windows, macOS and Linux must pass first
+    uses: ./.github/workflows/ci.yml
+
   build:
+    needs: ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -22,8 +29,6 @@ jobs:
         run: |
           version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' resume_shortlister/__init__.py)"
           [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME, package $version"; exit 1; }
-      - name: Test
-        run: uv run --python 3.12 --extra dev --extra anthropic --extra google --extra ollama pytest -q
       - name: Point the README's links at GitHub for the PyPI page
         run: uv run --python 3.12 --no-project python -m scripts.pypi_readme "$GITHUB_SHA"
       - name: Build
