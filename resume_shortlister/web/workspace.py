@@ -67,6 +67,22 @@ class Workspace:
             self._open[session_id] = opened
             return opened
 
+    def working(self) -> bool:
+        """Whether an open session is running a turn."""
+        with self._lock:
+            return any(session.busy.locked() for session in self._open.values())
+
+    def reopen_all(self) -> None:
+        """Have every open session use the settings now in effect (a new chat model after
+        setup). A saved session is closed, to reopen where it was saved; one with nothing said
+        yet is made again, with the same id."""
+        with self._lock:
+            for session_id in list(self._open):
+                if sessions.exists(self.saver, session_id):
+                    del self._open[session_id]
+                else:
+                    self._open[session_id] = OpenSession(*self._conversation(session_id))
+
     def list(self) -> list[sessions.SessionInfo]:
         graph = build_graph(self._make_services(), checkpointer=self.saver, conversational=True)
         return sessions.list_sessions(graph, self.saver)

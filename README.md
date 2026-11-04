@@ -74,10 +74,11 @@ On Linux without curl (`command not found: curl`), use
 `wget -qO- https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.sh | sh`.
 
 It takes a minute or two, then asks once for your OpenAI API key (what you type
-is hidden; press Enter to skip if you use another provider). The key stays in
-`~/.resume-shortlister/.env` on your computer (on Windows,
-`C:\Users\<you>\.resume-shortlister\.env`); the app never shows it. Run the
-same line again to update to the newest version; your key and data are kept.
+is hidden). Press Enter to skip it: the app asks the first time it starts, and lets
+you choose another provider. The key stays in `~/.resume-shortlister/.env` on your
+computer (on Windows, `C:\Users\<you>\.resume-shortlister\.env`); the app never
+shows it. Run the same line again to update to the newest version; your key and
+data are kept.
 
 What it does ([install.ps1](install.ps1), [install.sh](install.sh)): it installs
 [uv](https://docs.astral.sh/uv/), a small installer for Python apps, into
@@ -94,23 +95,25 @@ resume-shortlister web
 ```
 
 Your browser opens http://127.0.0.1:8765/ (if it does not, open that address yourself).
-A green dot next to the model name means ready; an amber dot comes with a message saying
-what to fix. Keep the terminal open; Ctrl-C stops the app.
+The first time, it asks which AI provider you use (OpenAI, Anthropic, Google Gemini, or
+Ollama on your own computer) and for its API key, unless you gave one when installing.
+A green dot next to the model name means ready. **Quit** (top right) stops the app, as
+does Ctrl-C in the terminal.
 
 Drop resumes (PDF, DOCX, TXT or MD) on the page or give a folder, describe the
 role or paste the job description, and follow the screening as it runs. Select a
 candidate for the evidence behind their place and interview questions; ask
 follow-ups in the conversation. The first time, it downloads the local embedding
 model (about 200 MB) and reads every resume, which takes a few minutes for a few
-hundred resumes ("Working…" meanwhile); later screenings of the same folder take
-about a minute.
+hundred resumes ("Reading resumes: 120 of 219"); later screenings of the same folder
+take about a minute.
 
 Next time, just run `resume-shortlister web`. Your screenings are saved under Sessions.
 
 | If | Then |
 | --- | --- |
 | `command not found: resume-shortlister` (Windows: "is not recognized") | Open a new terminal window, or run the install line again |
-| An amber dot: "OPENAI_API_KEY is not set" | Run the install line again and paste your key when asked (or add `OPENAI_API_KEY=sk-...` to `~/.resume-shortlister/.env`), then restart the app |
+| An amber dot, or the model says the key is wrong | Settings (the model name, top right) › **Change AI provider or key** |
 | "Address already in use" | It is already running in another terminal, or use `resume-shortlister web --port 8766` |
 | Windows: "running scripts is disabled" | Paste the whole install line, which allows this one script; if your organisation blocks it, ask your IT team |
 
@@ -155,7 +158,10 @@ app keeps is in one folder on your computer, `~/.resume-shortlister`: the index 
 resume folder (the resumes' text and search vectors, about 5 MB per 100 resumes), copies
 of uploaded files, saved sessions, stored model answers and reports. Resume text goes only
 to the chat model you configure, without names and contact details when it judges
-candidates; with a local model (Ollama), nothing leaves your computer at all.
+candidates; with a local model (Ollama), nothing leaves your computer at all. The app's
+only other request is to PyPI, where it is published, once a day, for the newest version
+number: it sends nothing about you or your resumes, and `RESUME_SHORTLISTER_UPDATE_CHECK=false`
+turns it off. When a newer version is out, the app says so; the install line updates it.
 
 To clear it and start from scratch:
 

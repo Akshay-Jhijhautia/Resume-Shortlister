@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/quit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Quit App */
+        post: operations["quit_app_api_quit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions": {
         parameters: {
             query?: never;
@@ -163,6 +180,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setup Options */
+        get: operations["setup_options_api_setup_get"];
+        put?: never;
+        /**
+         * Setup
+         * @description Save the chat model's provider and key (and the model, for Ollama) in the data home's
+         *     ``.env``; they apply at once, to every session.
+         */
+        post: operations["setup_api_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/status": {
         parameters: {
             query?: never;
@@ -172,6 +211,26 @@ export interface paths {
         };
         /** Status */
         get: operations["status_api_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Update
+         * @description Whether a newer version is out: PyPI is asked at most once a day (see ``updates``).
+         */
+        get: operations["update_api_update_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -369,6 +428,28 @@ export interface components {
              */
             status: "met" | "not_met" | "unverified";
         };
+        /**
+         * ProviderOption
+         * @description A chat model provider the setup page offers.
+         */
+        ProviderOption: {
+            /** Default Model */
+            default_model: string | null;
+            /** Help Url */
+            help_url: string;
+            /** Install Hint */
+            install_hint: string;
+            /** Installed */
+            installed: boolean;
+            /** Key Set */
+            key_set: boolean;
+            /** Key Var */
+            key_var: string | null;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+        };
         /** Recommendation */
         Recommendation: {
             /**
@@ -496,8 +577,34 @@ export interface components {
             /** Shortlist Size */
             shortlist_size: number;
             stored_answers: components["schemas"]["StoredAnswers"] | null;
+            /** Update Check */
+            update_check: boolean;
             /** Version */
             version: string;
+        };
+        /** SetupOptions */
+        SetupOptions: {
+            /** Current */
+            current: string;
+            /** Env File */
+            env_file: string;
+            /** Providers */
+            providers: components["schemas"]["ProviderOption"][];
+        };
+        /** SetupRequest */
+        SetupRequest: {
+            /**
+             * Api Key
+             * @default
+             */
+            api_key: string;
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /** Provider */
+            provider: string;
         };
         /**
          * Snapshot
@@ -532,6 +639,8 @@ export interface components {
             embedder: string;
             /** Model */
             model: string;
+            /** Needs Setup */
+            needs_setup: boolean;
             /** Problem */
             problem: string | null;
             /** Ready */
@@ -552,6 +661,19 @@ export interface components {
         TurnRequest: {
             /** Text */
             text: string;
+        };
+        /** UpdateView */
+        UpdateView: {
+            /** Available */
+            available: boolean;
+            /** Checks */
+            checks: boolean;
+            /** Current */
+            current: string;
+            /** How */
+            how: string;
+            /** Latest */
+            latest: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -575,6 +697,24 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    quit_app_api_quit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_sessions_api_sessions_get: {
         parameters: {
             query?: never;
@@ -895,6 +1035,59 @@ export interface operations {
             };
         };
     };
+    setup_options_api_setup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupOptions"];
+                };
+            };
+        };
+    };
+    setup_api_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     status_api_status_get: {
         parameters: {
             query?: never;
@@ -911,6 +1104,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    update_api_update_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateView"];
                 };
             };
         };

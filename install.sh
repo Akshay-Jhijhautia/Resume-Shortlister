@@ -82,12 +82,10 @@ elif (: </dev/tty) 2>/dev/null; then
         chmod 600 "$env_file"
         say "Saved your key in $env_file (only you can read it)."
     else
-        say "Skipped. Put your key in $env_file later, e.g. OPENAI_API_KEY=sk-..."
-        say "For Anthropic, Gemini or Ollama see"
-        say "https://github.com/Akshay-Jhijhautia/resume-shortlister/blob/main/docs/configuration.md#chat-model-providers"
+        say "Skipped: the app asks for your key when it first starts, and lets you choose another provider."
     fi
 else
-    say "Put your API key in $env_file, e.g. OPENAI_API_KEY=sk-..."
+    say "The app asks for your API key when it first starts."
 fi
 
 say ""

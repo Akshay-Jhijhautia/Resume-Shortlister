@@ -72,12 +72,10 @@ function Install-ResumeShortlister {
             [IO.File]::AppendAllText($envFile, $line, $utf8)
             Write-Host "Saved your key in $envFile (in your user folder, readable by you only)."
         } else {
-            Write-Host "Skipped. Put your key in $envFile later, e.g. OPENAI_API_KEY=sk-..."
-            Write-Host "For Anthropic, Gemini or Ollama see"
-            Write-Host "https://github.com/Akshay-Jhijhautia/resume-shortlister/blob/main/docs/configuration.md#chat-model-providers"
+            Write-Host "Skipped: the app asks for your key when it first starts, and lets you choose another provider."
         }
     } else {
-        Write-Host "Put your API key in $envFile, e.g. OPENAI_API_KEY=sk-..."
+        Write-Host "The app asks for your API key when it first starts."
     }
 
     Write-Host ""

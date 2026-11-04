@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SettingsView } from "../api/client";
+import type { SettingsView, UpdateView } from "../api/client";
 import { Drawer } from "./Drawer";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -9,9 +9,16 @@ const ROUNDS = {
   3: "retrieval, the deep review and interview recommendations",
 } as Record<number, string>;
 
-/** The settings in effect and where they come from. They are changed in a .env file, not
- * here: a page in the browser never handles API keys. */
-export function SettingsDrawer({ load, onClose }: { load: () => Promise<SettingsView>; onClose: () => void }) {
+interface Props {
+  load: () => Promise<SettingsView>;
+  update: UpdateView | null;
+  onChangeModel: () => void; // the AI provider and key, changed in the setup screen
+  onClose: () => void;
+}
+
+/** The settings in effect and where they come from. The AI provider and key are changed in
+ * the app; everything else in the data home's .env file. */
+export function SettingsDrawer({ load, update, onChangeModel, onClose }: Props) {
   const [settings, setSettings] = useState<SettingsView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,12 +33,12 @@ export function SettingsDrawer({ load, onClose }: { load: () => Promise<Settings
           {error}
         </div>
       )}
-      {settings && <Details settings={settings} />}
+      {settings && <Details settings={settings} update={update} onChangeModel={onChangeModel} />}
     </Drawer>
   );
 }
 
-function Details({ settings }: { settings: SettingsView }) {
+function Details({ settings, update, onChangeModel }: { settings: SettingsView; update: UpdateView | null; onChangeModel: () => void }) {
   const answers = settings.stored_answers;
   return (
     <>
@@ -56,6 +63,9 @@ function Details({ settings }: { settings: SettingsView }) {
             {settings.embeddings.startsWith("local:") && <span className="muted"> (computed on this computer)</span>}
           </dd>
         </dl>
+        <button type="button" className="secondary" onClick={onChangeModel}>
+          Change AI provider or key
+        </button>
       </section>
 
       <section>
@@ -95,18 +105,41 @@ function Details({ settings }: { settings: SettingsView }) {
       </section>
 
       <section>
-        <h3>Changing settings</h3>
+        <h3>Updates</h3>
+        <Updates version={settings.version} checks={settings.update_check} update={update} />
+      </section>
+
+      <section>
+        <h3>Other settings</h3>
         <p>
-          Put them in <code>{settings.env_file}</code> (or the environment), then restart <code>resume-shortlister web</code>.
-          For example:
+          Put them in <code>{settings.env_file}</code>, then quit and start Resume Shortlister again. For example:
         </p>
-        <pre>
-          {"LLM_PROVIDER=anthropic\nANTHROPIC_API_KEY=...\nSHORTLIST_SIZE=15"}
-        </pre>
-        <p className="muted">
-          Every setting is described in docs/configuration.md. Version {settings.version}.
-        </p>
+        <pre>{"SHORTLIST_SIZE=15\nSCREENING_ROUNDS=2"}</pre>
+        <p className="muted">Every setting is described in docs/configuration.md.</p>
       </section>
     </>
+  );
+}
+
+function Updates({ version, checks, update }: { version: string; checks: boolean; update: UpdateView | null }) {
+  if (update?.available) {
+    return (
+      <>
+        <p>
+          <b>Version {update.latest} is available</b> (you have {version}). To update, click Quit, then paste this line into a
+          terminal (PowerShell on Windows). It keeps your key, settings and screenings.
+        </p>
+        <pre className="command">{update.how}</pre>
+      </>
+    );
+  }
+  return (
+    <p className="muted">
+      Version {version}
+      {update?.latest ? ", the newest." : "."}{" "}
+      {checks
+        ? "Once a day the app asks PyPI, where it is published, for the newest version number; nothing about you or your resumes is sent. RESUME_SHORTLISTER_UPDATE_CHECK=false turns this off."
+        : "Not checking for updates (RESUME_SHORTLISTER_UPDATE_CHECK=false)."}
+    </p>
   );
 }

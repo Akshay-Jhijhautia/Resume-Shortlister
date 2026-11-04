@@ -20,3 +20,16 @@ test("a failed turn stays open so the error is seen", () => {
   expect(screen.getByText("Stopped · 2 steps")).toBeTruthy();
   expect(container.querySelector("details")?.open).toBe(true);
 });
+
+test("how far a long step is shows while it is the latest news, never as a step", () => {
+  const progress = (text: string): AgentEvent => ({ kind: "progress", text, node: "" });
+  const events = [note("Starting…"), progress("Reading resumes: 1 of 219"), progress("Reading resumes: 2 of 219")];
+  const { rerender } = render(<Activity events={events} busy />);
+  expect(screen.getByText("Reading resumes: 2 of 219")).toBeTruthy();
+  expect(screen.queryByText("Reading resumes: 1 of 219")).toBeNull();
+
+  rerender(<Activity events={[...events, note("219 ready")]} busy />);
+  expect(screen.queryByText(/Reading resumes/)).toBeNull();
+  rerender(<Activity events={[...events, note("219 ready")]} busy={false} />);
+  expect(screen.getByText("Done · 2 steps")).toBeTruthy();
+});

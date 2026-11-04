@@ -21,6 +21,7 @@ one line that names the provider.
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import os
 import sys
 from collections.abc import Callable
@@ -65,6 +66,13 @@ class Provider:
     takes_temperature: bool = True
     # ``with_structured_output`` method; None keeps the integration's default.
     structured_method: str | None = None
+    # Where to get a key (or, for a local server, the server), for the app's setup page.
+    help_url: str = ""
+
+    @property
+    def installed(self) -> bool:
+        """Whether its integration is installed (OpenAI's always is)."""
+        return importlib.util.find_spec(self.modules[0]) is not None
 
     @property
     def install_hint(self) -> str:
@@ -101,6 +109,7 @@ PROVIDERS: dict[str, Provider] = {
             name="openai", label="OpenAI", model_class="langchain_openai:ChatOpenAI", extra=None,
             default_model="gpt-5.6-terra", key_vars=("OPENAI_API_KEY",),
             modules=("langchain_openai", "openai"), sdk_error="openai:OpenAIError", options=_openai_options,
+            help_url="https://platform.openai.com/api-keys",
         ),
         Provider(
             name="anthropic", label="Anthropic", model_class="langchain_anthropic:ChatAnthropic",
@@ -110,18 +119,20 @@ PROVIDERS: dict[str, Provider] = {
             # Current Claude models reject temperature, and forced tool use (the default
             # structured-output method) under always-on thinking.
             takes_temperature=False, structured_method="json_schema",
+            help_url="https://console.anthropic.com/settings/keys",
         ),
         Provider(
             name="google", label="Google Gemini", model_class="langchain_google_genai:ChatGoogleGenerativeAI",
             extra="google", default_model="gemini-3.1-pro", key_vars=("GOOGLE_API_KEY", "GEMINI_API_KEY"),
             modules=("langchain_google_genai", "google"), sdk_error="google.genai.errors:APIError",
-            options=_limits,
+            options=_limits, help_url="https://aistudio.google.com/apikey",
         ),
         Provider(
             name="ollama", label="Ollama", model_class="langchain_ollama:ChatOllama", extra="ollama",
             default_model=None, key_vars=(), modules=("langchain_ollama", "ollama"),
             sdk_error="ollama:ResponseError",
             options=lambda s: _endpoint(s) | {"client_kwargs": {"timeout": s.llm_timeout}},
+            help_url="https://ollama.com/download",
         ),
     )
 }

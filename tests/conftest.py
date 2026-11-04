@@ -1,6 +1,7 @@
+import httpx
 import pytest
 
-from resume_shortlister import config
+from resume_shortlister import config, updates
 from resume_shortlister.config import Settings
 from resume_shortlister.rag import job_matcher, resume_rag
 from resume_shortlister.pools import ResumePool
@@ -18,6 +19,14 @@ def isolated_home(monkeypatch, tmp_path):
     config.get_settings.cache_clear()
     yield
     config.get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def no_update_checks(monkeypatch):
+    """The update check never reaches PyPI from a test."""
+    def offline():
+        raise httpx.ConnectError("tests are offline")
+    monkeypatch.setattr(updates, "_fetch", offline)
 
 
 @pytest.fixture(autouse=True)

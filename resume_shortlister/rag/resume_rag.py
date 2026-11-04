@@ -645,6 +645,8 @@ _LLM_SYSTEM = (
 # A chat model asked for JSON: ``(json_schema, system_prompt, resume_text) -> values``.
 # It raises ``MetadataLLMError`` when the call fails.
 MetadataLLM = Callable[[dict, str, str], dict]
+# Told what indexing is doing, in words for the user ("Reading resumes: 12 of 219").
+Progress = Callable[[str], None]
 
 
 class MetadataLLMError(RuntimeError):
@@ -831,6 +833,12 @@ class LocalEmbedder:
         if self._engine is None:
             self._engine = load_local_model(self.model, self.cache_dir)
         return self._engine
+
+    def prepare(self, progress: Progress | None = None) -> None:
+        """Load the model now (downloading it the first time), saying so to ``progress``."""
+        if self._engine is None and progress:
+            progress(f"Getting the language model ready (a {self.spec.size_mb} MB download the first time)…")
+        self.engine
 
     def _vectors(self, texts: list[str]) -> list[list[float]]:
         return [vector.tolist() for vector in self.engine.embed(texts, batch_size=self.batch_size)]
@@ -1033,13 +1041,14 @@ class ResumeRAG:
 
     # --- indexing ---
 
-    def index_directory(self, directory: str, force: bool = False) -> dict:
+    def index_directory(self, directory: str, force: bool = False, progress: Progress | None = None) -> dict:
         """Index every resume in ``directory``; skip unchanged ones unless ``force``.
 
         A file whose size and modification time match the index is not read
         again; one whose content hash matches is kept and its stamp refreshed.
         Resumes previously indexed from this directory whose files are gone
-        (or no longer readable) are removed from the index.
+        (or no longer readable) are removed from the index. ``progress`` is told
+        about each file read.
 
         Returns ``{"indexed", "unchanged", "removed"}`` (lists of resume
         paths), ``"skipped"``
@@ -1048,13 +1057,21 @@ class ResumeRAG:
         """
         summary = {"indexed": [], "unchanged": [], "removed": [], "chunks": 0, "skipped": []}
         seen = set()
+        to_read = []
         for entry in fs_tools.list_files(directory):
             path = str(Path(entry["path"]).resolve())
             stored = None if force else self._stored_record(path)
             if stored and stored.get("file_stamp") == file_stamp(path):
                 seen.add(path)
                 summary["unchanged"].append(path)
-                continue
+            else:
+                to_read.append((entry, stored))
+        prepare = getattr(self.embedder, "prepare", None)  # a local model: loaded before the first file
+        if to_read and prepare:
+            prepare(progress)
+        for done, (entry, stored) in enumerate(to_read, start=1):
+            if progress:
+                progress(f"Reading resumes: {done} of {len(to_read)}")
             resume, skipped = read_entry(entry)
             if skipped:
                 summary["skipped"].append(skipped)

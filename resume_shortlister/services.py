@@ -51,14 +51,16 @@ class Services:
     def candidates(self) -> CandidateDirectory:
         return self._active().candidates
 
-    def use_folder(self, folder: str | Path, embedder: resume_rag.Embedder | None = None) -> IntakeReport:
+    def use_folder(self, folder: str | Path, embedder: resume_rag.Embedder | None = None,
+                   progress: resume_rag.Progress | None = None) -> IntakeReport:
         """Sync ``folder``'s pool (indexing what changed) and make it the active pool."""
         pool = ResumePool.open(folder, self.settings, embedder=embedder)
-        report = pool.sync()
+        report = pool.sync(progress)
         self.pool = pool
         return report
 
-    def use_paths(self, paths: list[str], batch: str | Path | None = None) -> tuple[IntakeReport, Path | None]:
+    def use_paths(self, paths: list[str], batch: str | Path | None = None,
+                  progress: resume_rag.Progress | None = None) -> tuple[IntakeReport, Path | None]:
         """Activate one folder, or upload resume files and activate their batch.
 
         Files go into ``batch`` (a chat session's uploads, added to over time)
@@ -67,10 +69,10 @@ class Services:
         """
         folder, files = pools.classify(paths)
         if folder is not None:
-            return self.use_folder(folder), None
+            return self.use_folder(folder, progress=progress), None
         target = Path(batch) if batch else pools.batch_for(files, self.settings.uploads_dir)
         pools.upload(files, target)
-        report = self.use_folder(target)
+        report = self.use_folder(target, progress=progress)
         return replace(report, folder=pools.UPLOADS_LABEL), target
 
     def check_ready(self, require_resumes: bool = True) -> None:

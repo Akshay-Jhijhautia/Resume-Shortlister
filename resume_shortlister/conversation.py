@@ -36,7 +36,8 @@ MAX_ARG_CHARS = 80
 class Event:
     """Something the user should see. ``kind`` is one of:
 
-    - ``note``: progress ("Screened 100 resumes; 10 pass every must-have.")
+    - ``note``: a step done ("Screened 100 resumes; 10 pass every must-have.")
+    - ``progress``: how far a long step is ("Reading resumes: 12 of 219"); each replaces the last
     - ``message``: an answer or question from the agent (Markdown)
     - ``report``: the shortlist report (Markdown)
     - ``candidate_report``: one candidate's detailed report (Markdown)
@@ -102,8 +103,12 @@ class Conversation:
             first_turn = not snapshot.values
             payload = {"messages": [("user", text)]} | (self.initial_state if first_turn else {})
         try:
-            for update in self.graph.stream(payload, self.config, stream_mode="updates"):
-                for node, change in update.items():
+            for mode, chunk in self.graph.stream(payload, self.config, stream_mode=["updates", "custom"]):
+                if mode == "custom":  # written by a step while it runs (``get_stream_writer``)
+                    if "progress" in chunk:
+                        yield Event("progress", chunk["progress"])
+                    continue
+                for node, change in chunk.items():
                     for event in describe(node, change):
                         if event.kind == "report":
                             self.report = event.text

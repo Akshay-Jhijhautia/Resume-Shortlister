@@ -39,6 +39,40 @@ class Status(BaseModel):
     embedder: str
     ready: bool
     problem: str | None  # what to fix before screening, when not ready
+    needs_setup: bool  # the chat model has no key yet: the app asks for one first
+
+
+class ProviderOption(BaseModel):
+    """A chat model provider the setup page offers."""
+
+    name: str  # LLM_PROVIDER, e.g. "anthropic"
+    label: str  # e.g. "Anthropic"
+    key_var: str | None  # where its key is saved; None when it needs none (Ollama)
+    key_set: bool  # a key for it is already saved (or set in the environment)
+    default_model: str | None  # None: the user names the model (Ollama)
+    help_url: str  # where to get a key, or the server
+    installed: bool  # its integration is installed; else ``install_hint`` says how
+    install_hint: str
+
+
+class SetupOptions(BaseModel):
+    providers: list[ProviderOption]
+    current: str  # the provider in use
+    env_file: str  # where the choice and the key are saved
+
+
+class SetupRequest(BaseModel):
+    provider: str
+    api_key: str = ""  # empty keeps the key already saved for this provider
+    model: str = ""  # empty: the provider's default model
+
+
+class UpdateView(BaseModel):
+    current: str
+    latest: str | None  # None when not checked (turned off, or PyPI could not be reached)
+    available: bool  # ``latest`` is newer than ``current``
+    checks: bool  # whether the app checks at all (RESUME_SHORTLISTER_UPDATE_CHECK)
+    how: str  # the install line that updates this computer
 
 
 class StoredAnswers(BaseModel):
@@ -62,6 +96,7 @@ class SettingsView(BaseModel):
     reports_dir: str
     env_file: str  # where settings go: the data home's .env
     stored_answers: StoredAnswers | None  # None when model answers are not stored (LLM_CACHE=false)
+    update_check: bool  # whether the app asks PyPI once a day for the newest version
 
 
 class SessionSummary(BaseModel):

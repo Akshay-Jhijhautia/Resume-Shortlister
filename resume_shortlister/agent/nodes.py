@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, trim_messages
 from langchain_core.tools import BaseTool
+from langgraph.config import get_stream_writer
 from langgraph.types import Send, interrupt
 
 from .. import changes, explainability, llm, pools, prompts, reports, screening
@@ -165,8 +166,11 @@ class ConversationNodes:
         """Activate a folder, or upload files into this conversation's batch; earlier
         results belonged to the previous resumes."""
         batch = state.get("upload_folder") or pools.new_batch(self.services.settings.uploads_dir)
+        # Indexing takes minutes the first time: its progress is streamed while this step runs.
+        write = get_stream_writer()
         try:
-            report, uploaded_to = self.services.use_paths(state["load_paths"], batch=batch)
+            report, uploaded_to = self.services.use_paths(state["load_paths"], batch=batch,
+                                                          progress=lambda text: write({"progress": text}))
         except (FileNotFoundError, NotADirectoryError, ValueError) as exc:
             return {"load_paths": None, "load_error": str(exc),
                     "messages": [AIMessage(f"I couldn't load those resumes: {exc}")]}

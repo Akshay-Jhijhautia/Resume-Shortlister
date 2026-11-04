@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { api, saveFile } from "./api/client";
+import { useEffect, useMemo, useState } from "react";
+import { api, saveFile, type UpdateView } from "./api/client";
 import { CandidateDrawer } from "./components/CandidateDrawer";
 import { ConfirmCard } from "./components/ConfirmCard";
 import { Conversation, suggestions } from "./components/Conversation";
@@ -9,6 +9,7 @@ import { Results } from "./components/Results";
 import { RolePanel } from "./components/RolePanel";
 import { SessionsDrawer } from "./components/SessionsDrawer";
 import { SettingsDrawer } from "./components/SettingsDrawer";
+import { SetupScreen } from "./components/SetupScreen";
 import { useSession } from "./useSession";
 
 function HowItWorks() {
@@ -30,11 +31,33 @@ function HowItWorks() {
   );
 }
 
+/** After Quit: the app no longer runs, so this page has nothing to talk to. */
+function Stopped() {
+  return (
+    <main className="setup">
+      <section className="card">
+        <h2>Resume Shortlister has stopped</h2>
+        <p>You can close this tab. Your screenings are saved: start Resume Shortlister again to go on with them.</p>
+        <p className="muted">
+          In a terminal: <code>resume-shortlister web</code>
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export function App() {
   const session = useSession();
   const { status, snapshot, activity, busy, pending, error } = session;
   const [selected, setSelected] = useState<string | null>(null);
   const [panel, setPanel] = useState<"sessions" | "settings" | null>(null);
+  const [changingModel, setChangingModel] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const [update, setUpdate] = useState<UpdateView | null>(null);
+
+  useEffect(() => {
+    api.update().then(setUpdate, () => undefined); // no notice when it cannot be checked
+  }, []);
   const sessionId = snapshot?.session_id ?? "";
   const openQuestions = snapshot?.open_questions ?? [];
   const messages = snapshot?.messages ?? [];
@@ -49,15 +72,61 @@ export function App() {
     [sessionId, selected],
   );
 
+  const quit = () => {
+    if (!window.confirm("Quit Resume Shortlister? Your screenings are saved.")) return;
+    api.quit().then(
+      () => setStopped(true),
+      (e) => window.alert(e instanceof Error ? e.message : String(e)),
+    );
+  };
+
+  if (stopped) return <Stopped />;
+
+  const header = (
+    <Header
+      status={status}
+      busy={busy}
+      settingUp={Boolean(status?.needs_setup)}
+      update={update?.available ? update.latest : null}
+      onNew={() => void session.open(null)}
+      onSessions={() => setPanel("sessions")}
+      onSettings={() => setPanel("settings")}
+      onQuit={quit}
+    />
+  );
+  const settingsDrawer = panel === "settings" && (
+    <SettingsDrawer
+      load={api.settings}
+      update={update}
+      onChangeModel={() => {
+        setPanel(null);
+        setChangingModel(true);
+      }}
+      onClose={() => setPanel(null)}
+    />
+  );
+
+  if (status?.needs_setup || changingModel) {
+    return (
+      <>
+        {header}
+        <SetupScreen
+          load={api.setupOptions}
+          save={api.saveSetup}
+          onDone={(saved) => {
+            session.setStatus(saved);
+            setChangingModel(false);
+          }}
+          onCancel={status?.needs_setup ? undefined : () => setChangingModel(false)}
+        />
+        {settingsDrawer}
+      </>
+    );
+  }
+
   return (
     <>
-      <Header
-        status={status}
-        busy={busy}
-        onNew={() => void session.open(null)}
-        onSessions={() => setPanel("sessions")}
-        onSettings={() => setPanel("settings")}
-      />
+      {header}
       {status && !status.ready && <div className="banner problem">{status.problem}</div>}
       {snapshot?.notice && <div className="banner">{snapshot.notice}</div>}
       {error && (
@@ -114,7 +183,7 @@ export function App() {
           onClose={() => setPanel(null)}
         />
       )}
-      {panel === "settings" && <SettingsDrawer load={api.settings} onClose={() => setPanel(null)} />}
+      {settingsDrawer}
       <footer>
         Resume Shortlister {status?.version} · runs on this computer · recommendations are a starting point; people make the
         hiring decisions
