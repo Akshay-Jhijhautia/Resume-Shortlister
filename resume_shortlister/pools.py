@@ -202,9 +202,9 @@ class ResumePool:
     def candidates(self) -> CandidateDirectory:
         return CandidateDirectory(self.rag)
 
-    def sync(self) -> IntakeReport:
+    def sync(self, progress: resume_rag.Progress | None = None) -> IntakeReport:
         """Index new and changed resumes, drop deleted ones, report what was skipped."""
-        summary = self.rag.index_directory(str(self.folder))
+        summary = self.rag.index_directory(str(self.folder), progress=progress)
         self.candidates.refresh()
         return IntakeReport(
             folder=resume_rag.display_path(str(self.folder)), ready=self.size,

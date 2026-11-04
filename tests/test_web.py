@@ -60,6 +60,12 @@ def events(response: httpx.Response) -> list[tuple[str, dict]]:
     return found
 
 
+def _said(streamed: list[tuple[str, dict]], kind: str | None = None) -> list[str]:
+    """The texts of a turn's events of ``kind``; by default all but the progress updates."""
+    return [data["text"] for name, data in streamed
+            if name == "event" and (data["kind"] == kind if kind else data["kind"] != "progress")]
+
+
 def _turn(client, session_id: str, text: str) -> tuple[list[dict], dict]:
     streamed = events(client.post(f"/api/sessions/{session_id}/turns", json={"text": text}))
     assert streamed[-1][0] == "snapshot"
@@ -216,7 +222,8 @@ def test_uploaded_files_join_the_session(client, make_services):
     assert snapshot["resumes"] == "your uploaded resumes"
     # The history says what the user did, not the command the app sent for them.
     assert snapshot["messages"][0] == {"role": "user", "text": "Upload 2 files: resume_john_doe.pdf, resume_alex_lee.txt"}
-    assert "Uploaded resumes: 2 ready" in streamed[0][1]["text"]
+    assert _said(streamed, "progress") == ["Reading resumes: 1 of 2", "Reading resumes: 2 of 2"]
+    assert "Uploaded resumes: 2 ready" in _said(streamed)[0]
     incoming = Path(make_services().settings.uploads_dir) / "incoming"
     assert not any(incoming.iterdir())  # staged files are cleaned up
 
@@ -228,7 +235,7 @@ def test_a_folder_is_loaded_and_reloaded_after_a_restart(client, make_services, 
     session_id = _new(client)
     assert client.post(f"/api/sessions/{session_id}/folder", json={"path": "/no/such/folder"}).status_code == 422
     streamed = events(client.post(f"/api/sessions/{session_id}/folder", json={"path": str(folder)}))
-    assert "1 ready" in streamed[0][1]["text"]
+    assert "1 ready" in _said(streamed)[0]
     assert streamed[-1][1]["messages"][0]["text"] == f"Load the resumes in {folder}"
 
     restarted = TestClient(create_app(make_services, token=TOKEN), base_url="http://127.0.0.1",
@@ -243,7 +250,7 @@ def test_a_folder_path_in_quotes_is_loaded(client, tmp_path):
     folder.mkdir()
     shutil.copy(RESUMES_DIR / "resume_john_doe.pdf", folder)
     streamed = events(client.post(f"/api/sessions/{_new(client)}/folder", json={"path": f'"{folder}"'}))
-    assert "1 ready" in streamed[0][1]["text"]
+    assert "1 ready" in _said(streamed)[0]
     assert streamed[-1][1]["messages"][0]["text"] == f"Load the resumes in {folder}"
 
 

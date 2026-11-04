@@ -9,6 +9,10 @@ The server listens on 127.0.0.1 and answers only requests whose Host is that
 address or ``localhost`` (no DNS rebinding). API calls must carry the token
 created at startup, which only the app's own page knows, so another website
 open in the browser cannot drive the API.
+
+The setup page saves the chat model's provider and key in the data home's
+``.env`` (readable by its owner only); no response ever contains a key. Quit
+stops the server.
 """
 
 from __future__ import annotations
@@ -16,6 +20,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import os
+import re
 import secrets
 import shutil
 import threading
@@ -28,20 +33,24 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import __version__, analysis, guardrails, pools, providers
-from ..config import Settings, get_settings, tool_env
+from .. import __version__, analysis, guardrails, pools, providers, updates
+from ..config import Settings, env_file, get_settings, save_env, tool_env
 from ..rag.resume_rag import display_path
 from ..services import Services
 from .models import (
     CandidateDetail,
     FolderRequest,
     InterviewPlan,
+    ProviderOption,
     SessionSummary,
     SettingsView,
+    SetupOptions,
+    SetupRequest,
     Snapshot,
     Status,
     StoredAnswers,
     TurnRequest,
+    UpdateView,
     event_payload,
 )
 from .workspace import OpenSession, Workspace
@@ -55,6 +64,9 @@ DEFAULT_HOST = "127.0.0.1"
 # Longest message accepted (a long job description fits easily).
 MAX_TEXT_CHARS = 50_000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # per resume file
+# What an API key and a model name may contain: they are written into .env as they are.
+_KEY_RE = re.compile(r"[A-Za-z0-9_.\-]{8,400}")
+_MODEL_RE = re.compile(r"[A-Za-z0-9_.:/\-]{1,200}")
 # The browser app, built from frontend/ (``npm run build``); its page carries this placeholder.
 STATIC_DIR = Path(__file__).parent / "static"
 TOKEN_PLACEHOLDER = "__RESUME_SHORTLISTER_TOKEN__"
@@ -80,6 +92,7 @@ def create_app(
     """The app; ``token`` None generates one (``app.state.token``)."""
     app = FastAPI(title="Resume Shortlister", version=__version__, docs_url=None, redoc_url=None)
     app.state.token = token or secrets.token_urlsafe(32)
+    app.state.quit = None  # set by ``serve``: stops the server
     workspace = app.state.workspace = Workspace(make_services)
 
     @app.middleware("http")
@@ -144,8 +157,9 @@ def create_app(
         except ValueError as exc:
             problem = str(exc)
         settings = services.settings
+        needs_setup = services.model is None and providers.missing_key(providers.required_key_vars(settings)) is not None
         return Status(version=__version__, model=settings.model_label, embedder=settings.embedder,
-                      ready=problem is None, problem=problem)
+                      ready=problem is None, problem=problem, needs_setup=needs_setup)
 
     @app.get("/api/settings")
     def settings_view() -> SettingsView:
@@ -162,7 +176,75 @@ def create_app(
             env_file=display_path(str(Path(settings.home) / ".env")),
             stored_answers=StoredAnswers(answers=stats.answers, reused=stats.reused, size_mb=round(stats.size_mb, 1))
             if stats else None,
+            update_check=settings.update_check,
         )
+
+    # --- setup, updates and quitting ---
+
+    @app.get("/api/setup")
+    def setup_options() -> SetupOptions:
+        settings = make_services().settings
+        return SetupOptions(
+            providers=[
+                ProviderOption(
+                    name=p.name, label=p.label, key_var=p.key_vars[0] if p.key_vars else None,
+                    key_set=bool(p.key_vars) and providers.missing_key(p.key_vars) is None,
+                    default_model=p.default_model, help_url=p.help_url, installed=p.installed,
+                    install_hint=p.install_hint,
+                )
+                for p in providers.PROVIDERS.values()
+            ],
+            current=settings.llm_provider, env_file=display_path(str(env_file(settings))),
+        )
+
+    @app.post("/api/setup")
+    def setup(request: SetupRequest) -> Status:
+        """Save the chat model's provider and key (and the model, for Ollama) in the data home's
+        ``.env``; they apply at once, to every session."""
+        provider = providers.PROVIDERS.get(request.provider)
+        if provider is None:
+            raise HTTPException(422, f"Unknown provider '{request.provider}'.")
+        if not provider.installed:
+            raise HTTPException(422, f"{provider.label} is not installed here: {provider.install_hint}")
+        key, model = request.api_key.strip(), request.model.strip()
+        if key and not _KEY_RE.fullmatch(key):
+            raise HTTPException(422, "That does not look like an API key: copy it again, in one piece, without spaces.")
+        if provider.key_vars and not key and providers.missing_key(provider.key_vars):
+            raise HTTPException(422, f"Paste your {provider.label} API key.")
+        if not model and provider.default_model is None:
+            raise HTTPException(422, f"Name the {provider.label} model to use (see: ollama list).")
+        if model and not _MODEL_RE.fullmatch(model):
+            raise HTTPException(422, "A model name has no spaces, e.g. llama3.3 or qwen3:32b.")
+        if workspace.working():
+            raise HTTPException(409, "A screening is still running: change the settings when it is done.")
+        values: dict[str, str | None] = {"LLM_PROVIDER": provider.name, "LLM_MODEL": model or None}
+        if provider.name != "ollama":
+            values["LLM_BASE_URL"] = None  # a server set earlier is not this provider's
+        if key:
+            values[provider.key_vars[0]] = key
+        save_env(env_file(make_services().settings), values)
+        for name, value in values.items():  # in effect now, without a restart
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+        get_settings.cache_clear()
+        workspace.reopen_all()
+        return status()
+
+    @app.get("/api/update")
+    def update() -> UpdateView:
+        """Whether a newer version is out: PyPI is asked at most once a day (see ``updates``)."""
+        settings = make_services().settings
+        latest = updates.latest_version(Path(settings.home) / "update-check.json") if settings.update_check else None
+        return UpdateView(current=__version__, latest=latest, available=updates.is_newer(latest, __version__),
+                          checks=settings.update_check, how=updates.install_command())
+
+    @app.post("/api/quit", status_code=204)
+    def quit_app() -> None:
+        if app.state.quit is None:
+            raise HTTPException(409, "This server is stopped where it was started (Ctrl-C).")
+        threading.Timer(0.2, app.state.quit).start()  # once this answer is sent
 
     @app.get("/api/sessions")
     def list_sessions() -> list[SessionSummary]:
@@ -293,13 +375,18 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True, host: str = DEFAU
     """
     import uvicorn
 
-    settings = web_settings(get_settings())
-    app = create_app(lambda: Services.from_settings(settings), token=tool_env("TOKEN"))
+    web_settings(get_settings())  # an invalid setting stops here, with the problem
+    # Settings are read for every session, so what the setup page saves applies at once.
+    app = create_app(lambda: Services.from_settings(web_settings(get_settings())), token=tool_env("TOKEN"))
+    server = uvicorn.Server(uvicorn.Config(app, host=host, port=port, log_level="warning",
+                                           timeout_graceful_shutdown=5))
+    app.state.quit = lambda: setattr(server, "should_exit", True)
     url = f"http://127.0.0.1:{port}/"
     if host == DEFAULT_HOST:
-        print(f"Resume Shortlister is running at {url} (Ctrl-C to stop).")
+        print(f"Resume Shortlister is running at {url} (Quit in the app, or Ctrl-C, stops it).")
         if open_browser:
             threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     else:  # in a container: the browser is on the host, at the port Docker published
         print(f"Resume Shortlister is listening on {host}:{port}. Open http://127.0.0.1:<published port>/ (Ctrl-C to stop).")
-    uvicorn.run(app, host=host, port=port, log_level="warning")
+    server.run()
+    print("Resume Shortlister has stopped.")

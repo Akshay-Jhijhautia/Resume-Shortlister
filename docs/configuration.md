@@ -1,6 +1,8 @@
 # Configuration
 
 Settings come from the environment and `.env` files ([all of them](#settings)); the browser app's Settings panel shows the ones in effect.
+The AI provider and its key are also chosen in the browser app (on first start, or Settings ›
+Change AI provider or key), which saves them in `~/.resume-shortlister/.env`.
 
 ## Chat model providers
 
@@ -84,6 +86,7 @@ other embeddings is re-indexed automatically the next time it is used.
 | `SCREENING_ROUNDS` | `3` | 1: retrieval only; 2: + deep analysis; 3: + interview recommendations |
 | `SAVE_REPORTS` | `true` | Save reports after every screening |
 | `LLM_CACHE` / `LLM_CACHE_DB` | `true` / `~/.resume-shortlister/llm_cache.sqlite` | Reuse the model's answer to a question asked before |
+| `RESUME_SHORTLISTER_UPDATE_CHECK` | `true` | The browser app asks PyPI once a day for the newest version number (nothing else is sent), to say when an update is out |
 
 Settings come from the environment, then `./.env`, then
 `~/.resume-shortlister/.env`. The older `OPENAI_MODEL`, `OPENAI_TEMPERATURE`,

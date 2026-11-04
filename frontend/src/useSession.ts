@@ -62,6 +62,8 @@ export function useSession() {
   const id = snapshot?.session_id ?? "";
   return {
     status,
+    /** The status after the setup screen saved a provider and key. */
+    setStatus,
     snapshot,
     activity,
     busy,

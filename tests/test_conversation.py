@@ -329,6 +329,21 @@ def test_resumes_command_loads_a_folder_without_the_model(chat, services, applic
     assert chat.graph.get_state(chat.config).next == ("human_feedback",)
 
 
+def test_progress_updates_the_status_line_and_is_not_printed(chat, applicants, monkeypatch):
+    updates = []
+    real_status = chat.console.status
+
+    def status(text):
+        line = real_status(text)
+        monkeypatch.setattr(line, "update", lambda text: updates.append(text))
+        return line
+
+    monkeypatch.setattr(chat.console, "status", status)
+    chat.send(f"/resumes {applicants}")
+    assert updates and updates[-1].startswith("Reading resumes: ")
+    assert "Reading resumes" not in output(chat)
+
+
 def test_loading_a_folder_rescreens_the_current_role(chat, services, applicants):
     chat.send("Find me a Python backend engineer; Django is a plus")
     assert len(state(chat)["candidates"]) == 12

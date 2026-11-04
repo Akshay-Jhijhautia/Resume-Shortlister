@@ -11,10 +11,15 @@ export type SettingsView = Schemas["SettingsView"];
 export type CandidateDetail = Schemas["CandidateDetail"];
 export type InterviewPlan = Schemas["InterviewPlan"];
 export type InterviewQuestion = Schemas["InterviewQuestion"];
+export type SetupOptions = Schemas["SetupOptions"];
+export type ProviderOption = Schemas["ProviderOption"];
+export type SetupRequest = Schemas["SetupRequest"];
+export type UpdateView = Schemas["UpdateView"];
 
-/** What the agent does during a turn (resume_shortlister/conversation.py: Event). */
+/** What the agent does during a turn (resume_shortlister/conversation.py: Event); a
+ * ``progress`` event replaces the one before ("Reading resumes: 12 of 219"). */
 export interface AgentEvent {
-  kind: "note" | "message" | "report" | "candidate_report" | "tool_failed" | "error";
+  kind: "note" | "progress" | "message" | "report" | "candidate_report" | "tool_failed" | "error";
   text: string;
   node: string;
 }
@@ -84,6 +89,12 @@ const json = (body: unknown): RequestInit => ({
 export const api = {
   status: () => request<Status>("/api/status"),
   settings: () => request<SettingsView>("/api/settings"),
+  setupOptions: () => request<SetupOptions>("/api/setup"),
+  /** Saves the chat model's provider and key on this computer; in effect at once. */
+  saveSetup: (choice: SetupRequest) => request<Status>("/api/setup", { method: "POST", ...json(choice) }),
+  update: () => request<UpdateView>("/api/update"),
+  /** Stops the app (the server); the page stays, with nothing to talk to. */
+  quit: () => request<void>("/api/quit", { method: "POST" }),
   sessions: () => request<SessionSummary[]>("/api/sessions"),
   createSession: () => request<Snapshot>("/api/sessions", { method: "POST" }),
   session: (id: string) => request<Snapshot>(`/api/sessions/${encodeURIComponent(id)}`),

@@ -20,6 +20,8 @@ sessions and indexes record paths inside it.
 from __future__ import annotations
 
 import os
+import re
+import uuid
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -55,9 +57,12 @@ def _optional_float(*names: str | None) -> float | None:
     return float(value) if value is not None else None
 
 
-def _flag(name: str, default: bool | None) -> bool | None:
-    value = os.getenv(name)
+def _yes(value: str | None, default: bool | None) -> bool | None:
     return default if value in (None, "") else value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _flag(name: str, default: bool | None) -> bool | None:
+    return _yes(os.getenv(name), default)
 
 
 # Where each local data path is inside the data home, unless set on its own.
@@ -107,6 +112,8 @@ class Settings:
     # Reuse the model's answer to a question asked before (see ``llm_cache``).
     llm_cache: bool = True
     llm_cache_db: str = ""
+    # Ask PyPI once a day whether a newer version is out (see ``updates``).
+    update_check: bool = True
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -135,6 +142,7 @@ class Settings:
             save_reports=_flag("SAVE_REPORTS", defaults.save_reports),
             llm_cache=_flag("LLM_CACHE", defaults.llm_cache),
             llm_cache_db=os.getenv("LLM_CACHE_DB") or "",
+            update_check=_yes(tool_env("UPDATE_CHECK"), defaults.update_check),
         )
 
     def __post_init__(self) -> None:
@@ -164,6 +172,30 @@ class Settings:
     def model_label(self) -> str:
         """The chat model as people read it, e.g. "Anthropic claude-opus-5-5"."""
         return f"{providers.get(self.llm_provider).label} {self.llm_model}"
+
+
+# A ``.env`` line setting a variable: ``NAME=value`` or ``export NAME=value``.
+_ENV_LINE_RE = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=")
+
+
+def env_file(settings: Settings) -> Path:
+    """The data home's ``.env``, where settings made in the app are saved."""
+    return Path(settings.home).expanduser() / ".env"
+
+
+def save_env(path: Path, values: dict[str, str | None]) -> None:
+    """Set each of ``values`` in the ``.env`` file at ``path`` (``None`` removes it), keeping
+    its other lines. The file is readable by its owner only, and replaced in one step, so
+    it is never left half written."""
+    lines = path.read_text(encoding="utf-8-sig").splitlines() if path.exists() else []
+    kept = [line for line in lines if not ((m := _ENV_LINE_RE.match(line)) and m.group(1) in values)]
+    kept += [f"{name}={value}" for name, value in values.items() if value is not None]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".env-{uuid.uuid4().hex}.tmp")
+    with os.fdopen(os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w",
+                   encoding="utf-8", newline="\n") as out:
+        out.write("".join(f"{line}\n" for line in kept))
+    os.replace(temporary, path)
 
 
 def load_env_files() -> None:

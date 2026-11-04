@@ -1,6 +1,30 @@
 # Changelog
 
 ## Unreleased
+<<<<<<< Updated upstream
+=======
+
+### Added
+
+- **Set up in the browser**: on first start, the app asks which AI provider you
+  use (OpenAI, Anthropic, Google Gemini, or Ollama on your own computer) and for
+  its key, with a link to where to make one, and saves them in the data home's
+  `.env`, readable by you only. They apply at once, without a restart; Settings
+  › Change AI provider or key changes them later. No answer from the app ever
+  contains a key.
+- **Quit** in the app stops it, so nobody needs the terminal to.
+- **Progress while resumes are read**: "Getting the language model ready" (a
+  download the first time), then "Reading resumes: 120 of 219", in the browser
+  and in the terminal chat, instead of a silent "Working…".
+- **Update notice**: when a newer version is out, the header says so, and
+  Settings shows the line that updates this computer. The app asks PyPI once a
+  day for the newest version number and sends nothing else;
+  `RESUME_SHORTLISTER_UPDATE_CHECK=false` turns it off.
+
+## 1.3.0 (2026-11-03)
+
+Windows.
+>>>>>>> Stashed changes
 
 ### Added
 

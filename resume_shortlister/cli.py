@@ -57,9 +57,12 @@ class ChatSession(Conversation):
 
     def send(self, text: str) -> None:
         """Deliver one user message and print what the agent does with it."""
-        with self.console.status("Working…"):
+        with self.console.status("Working…") as status:
             for event in self.turn(text):
-                self.show(event)
+                if event.kind == "progress":
+                    status.update(event.text)  # one line, updated in place
+                else:
+                    self.show(event)
 
     def show(self, event: Event) -> None:
         if event.kind == "note":

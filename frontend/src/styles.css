@@ -739,3 +739,78 @@ pre {
   padding: 10px 12px;
   margin: 6px 0;
 }
+
+/* The setup screen, and the page after Quit: one card in the middle. */
+.setup {
+  max-width: 620px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+.setup p {
+  line-height: 1.5;
+}
+.setup form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+.choices {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.choices legend {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 4px;
+}
+.choice {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.choice input {
+  width: auto;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.setup .row button.primary {
+  margin-top: 0;
+}
+.setup .row button.secondary {
+  flex: none;
+}
+
+/* The header's update notice: present only when a newer version is out. */
+.actions button.update {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: transparent;
+  font-weight: 600;
+}
+pre.command {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--neutral-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  user-select: all;
+}
+
+.facts + button.secondary {
+  margin-top: 12px;
+}
