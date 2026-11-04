@@ -5,9 +5,10 @@
 #   wget -qO- https://raw.githubusercontent.com/Akshay-Jhijhautia/resume-shortlister/main/install.sh | sh
 #
 # It installs uv (a small Python installer, into ~/.local/bin) unless you have it, lets uv
-# fetch its own Python, installs Resume Shortlister as the `resume-shortlister` command and
-# asks once for your OpenAI API key. No sudo, git or Python needed. Running it again
-# upgrades to the newest version and keeps your key and data.
+# fetch its own Python, installs Resume Shortlister as the `resume-shortlister` command,
+# asks once for your OpenAI API key, and puts Resume Shortlister in Applications (macOS) or
+# the app menu (Linux). No sudo, git or Python needed. Running it again upgrades to the
+# newest version and keeps your key and data. To remove it: uninstall.sh, next to this file.
 #
 # Settings (environment variables), for testing or another source:
 #   RESUME_SHORTLISTER_PACKAGE   what to install (default: from PyPI, with every chat provider)
@@ -88,8 +89,27 @@ else
     say "The app asks for your API key when it first starts."
 fi
 
+# 4. The icon that opens the app: in Applications (macOS) or the app menu (Linux)
+if "$command" launcher >/dev/null 2>&1; then
+    case "$(uname -s)" in
+        Darwin) where="Applications (or Spotlight: type Resume Shortlister)" ;;
+        *) where="your app menu" ;;
+    esac
+else
+    where=""
+fi
+
 say ""
-say "Done. Open a new terminal window and run:"
+if [ -n "$where" ]; then
+    say "Done. Open Resume Shortlister from $where."
+else
+    say "Done."
+fi
+say "Or, in a new terminal window: resume-shortlister open"
 say ""
-say "    resume-shortlister web"
-say ""
+
+# Started now for the person at this computer (a terminal, and a screen to show it on).
+if (: </dev/tty) 2>/dev/null && { [ "$(uname -s)" = Darwin ] || [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; }; then
+    say "Starting it now..."
+    "$command" open >/dev/null || true
+fi

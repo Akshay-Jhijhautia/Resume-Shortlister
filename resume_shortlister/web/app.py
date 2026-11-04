@@ -24,6 +24,7 @@ import re
 import secrets
 import shutil
 import threading
+import time
 import uuid
 import webbrowser
 from collections.abc import Callable, Iterator
@@ -33,7 +34,7 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import __version__, analysis, guardrails, pools, providers, updates
+from .. import __version__, analysis, guardrails, launcher, pools, providers, updates
 from ..config import Settings, env_file, get_settings, save_env, tool_env
 from ..rag.resume_rag import display_path
 from ..services import Services
@@ -386,7 +387,30 @@ def serve(port: int = DEFAULT_PORT, open_browser: bool = True, host: str = DEFAU
         print(f"Resume Shortlister is running at {url} (Quit in the app, or Ctrl-C, stops it).")
         if open_browser:
             threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+        # Found by ``resume-shortlister open`` once it listens (a second copy that cannot
+        # take the port never replaces the first one's record).
+        threading.Thread(target=_record_when_started, args=(server, port), daemon=True).start()
     else:  # in a container: the browser is on the host, at the port Docker published
         print(f"Resume Shortlister is listening on {host}:{port}. Open http://127.0.0.1:<published port>/ (Ctrl-C to stop).")
-    server.run()
+    try:
+        server.run()
+    finally:
+        _forget_server()
     print("Resume Shortlister has stopped.")
+
+
+def _record_when_started(server, port: int) -> None:
+    while not server.started and not server.should_exit:
+        time.sleep(0.1)
+    if server.started:
+        launcher.record_server(port)
+
+
+def _forget_server() -> None:
+    """Remove this process's record of the running app (never another's)."""
+    path = launcher.server_file()
+    try:
+        if json.loads(path.read_text(encoding="utf-8")).get("pid") == os.getpid():
+            path.unlink()
+    except (OSError, ValueError):
+        pass

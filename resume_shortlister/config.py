@@ -198,11 +198,16 @@ def save_env(path: Path, values: dict[str, str | None]) -> None:
     os.replace(temporary, path)
 
 
+def data_home() -> Path:
+    """The data home the environment names (``RESUME_SHORTLISTER_HOME``), else the default; read
+    without the other settings, which may not be valid yet."""
+    return Path(tool_env("HOME") or DEFAULT_HOME).expanduser()
+
+
 def load_env_files() -> None:
     """Load ``.env`` from the current directory, then from the data home (no overrides)."""
     load_dotenv(find_dotenv(usecwd=True))
-    home = Path(tool_env("HOME") or DEFAULT_HOME).expanduser()
-    load_dotenv(home / ".env")
+    load_dotenv(data_home() / ".env")
 
 
 @lru_cache(maxsize=1)

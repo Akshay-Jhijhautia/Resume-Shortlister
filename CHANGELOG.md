@@ -4,6 +4,24 @@
 
 ### Added
 
+- **An app icon, no terminal needed**: the installers put Resume Shortlister in
+  Applications (macOS), the Start menu and on the desktop (Windows) or the app
+  menu (Linux). It starts the app in the background, with no terminal window,
+  and opens it in the browser (or opens the one already running). The macOS app
+  is made on your computer, so it needs no signing and macOS shows no warning.
+  At the end of an install, the app starts by itself.
+- `resume-shortlister open`, `stop` and `launcher [--remove]`: what the icon
+  runs, stopping the app running in the background, and making the icon.
+- **Uninstall** with one line (`uninstall.sh`, `uninstall.ps1`): it stops the
+  app, removes the icon and the command, and asks before deleting your data
+  (only the app's own folder).
+
+## 1.4.0 (2026-11-04)
+
+For people who never open a terminal.
+
+### Added
+
 - **Set up in the browser**: on first start, the app asks which AI provider you
   use (OpenAI, Anthropic, Google Gemini, or Ollama on your own computer) and for
   its key, with a link to where to make one, and saves them in the data home's

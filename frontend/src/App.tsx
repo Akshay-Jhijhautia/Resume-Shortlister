@@ -37,9 +37,10 @@ function Stopped() {
     <main className="setup">
       <section className="card">
         <h2>Resume Shortlister has stopped</h2>
-        <p>You can close this tab. Your screenings are saved: start Resume Shortlister again to go on with them.</p>
+        <p>You can close this tab. Your screenings are saved: open Resume Shortlister again to go on with them.</p>
         <p className="muted">
-          In a terminal: <code>resume-shortlister web</code>
+          Its icon is in Applications on a Mac, in the Start menu on Windows, and in the app menu on Linux. In a
+          terminal: <code>resume-shortlister open</code>
         </p>
       </section>
     </main>
