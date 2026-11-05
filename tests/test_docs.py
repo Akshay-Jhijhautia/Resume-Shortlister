@@ -94,3 +94,19 @@ def test_the_sample_kit_has_resumes_job_descriptions_and_a_guide(tmp_path):
         assert "made up" in kit.read("resume-shortlister-samples/README.txt").decode("utf-8")
     assert sum(name.startswith("resume-shortlister-samples/resumes/") for name in names) == 12
     assert {name.rsplit("/", 1)[1] for name in names if "/job-descriptions/" in name} == set(sample_kit.ROLES.values())
+
+
+CONFLICT_RE = re.compile(r"^(<<<<<<<|=======|>>>>>>>)( |$)", re.MULTILINE)
+TEXT_SUFFIXES = {".py", ".md", ".yml", ".yaml", ".toml", ".json", ".sh", ".ps1", ".ts", ".tsx", ".css", ".html", ".txt"}
+SKIPPED_DIRS = {".git", ".venv", "node_modules", "build", "dist", "__pycache__", ".pytest_cache"}
+
+
+def test_no_file_holds_merge_conflict_markers():
+    """A conflict left in a file (from a merge, or a stash popped onto another branch) breaks
+    it: a workflow GitHub cannot read, a heading in the changelog."""
+    left = []
+    for path in ROOT.rglob("*"):
+        if path.suffix in TEXT_SUFFIXES and path.is_file() and not SKIPPED_DIRS & set(path.relative_to(ROOT).parts):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            left += [f"{path.relative_to(ROOT)}:{text[:m.start()].count(chr(10)) + 1}" for m in CONFLICT_RE.finditer(text)]
+    assert left == []

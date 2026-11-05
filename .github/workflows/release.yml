@@ -1,9 +1,9 @@
 # Publish to PyPI when a version tag is pushed (git tag v1.5.1 && git push origin v1.5.1),
 # then make the GitHub release: the version's CHANGELOG section, the package files and the
 # sample kit (fictional resumes to try the app with). Run it by hand (Actions > Release >
-# Run workflow) to publish to TestPyPI instead, as a rehearsal. Uses trusted publishing, so no token is stored: on pypi.org and test.pypi.org,
-# add this repository and this workflow (release.yml, environments "pypi" and "testpypi")
-# as a trusted publisher once.
+# Run workflow) to publish to TestPyPI instead, as a rehearsal. Uses trusted publishing, so
+# no token is stored: on pypi.org and test.pypi.org, add this repository and this workflow
+# (release.yml, environments "pypi" and "testpypi") as a trusted publisher once.
 # Actions are pinned to a commit (a tag can be moved); Dependabot proposes updates.
 name: Release
 

@@ -33,7 +33,6 @@ Ready to share.
 ## 1.5.0 (2026-11-04)
 
 An app icon: no terminal needed.
-=======
 
 ### Added
 
