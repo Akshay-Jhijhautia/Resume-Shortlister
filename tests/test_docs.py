@@ -62,7 +62,7 @@ def test_the_pypi_readme_links_every_file_on_github_at_the_release_tag():
     assert f"]({repo}/blob/v9.9.9/LICENSE)" in published
     assert f"]({repo}/blob/v9.9.9/README.md#limitations)" in published
     raw = repo.replace("https://github.com/", "https://raw.githubusercontent.com/")
-    assert f"]({raw}/v9.9.9/docs/images/web-shortlist.png)" in published
+    assert f"]({raw}/v9.9.9/docs/images/resume-shortlister-demo.gif)" in published
     assert LINK_RE.sub("", published) == LINK_RE.sub("", readme)  # only the links changed
 
 
