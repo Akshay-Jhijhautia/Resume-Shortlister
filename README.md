@@ -16,7 +16,7 @@ and shows the evidence behind every score: the line in the resume that proves
 each requirement. Then ask about the candidates, compare them or change the
 role, and the shortlist updates.
 
-![The shortlist and the conversation in the browser](docs/images/web-shortlist.png)
+![A tour in under a minute: resumes in, a shortlist with the evidence out, questions answered](docs/images/resume-shortlister-demo.gif)
 
 ## What it offers
 
